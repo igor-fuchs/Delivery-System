@@ -9,7 +9,13 @@ using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
+builder.Services.AddOpenApi();
+
+builder.Services
+    .AddOptions<JwtSettings>()
+    .BindConfiguration("Jwt")
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
 
 builder.Services.AddInfrastructure();
 
@@ -22,7 +28,10 @@ builder.Services
     });
 
 var jwtSettings = builder.Configuration.GetSection("Jwt").Get<JwtSettings>()
-    ?? throw new InvalidOperationException("JWT settings are not configured.");
+    ?? throw new InvalidOperationException("JWT settings section 'Jwt' is missing from configuration.");
+
+if (string.IsNullOrEmpty(jwtSettings.SecretKey)) 
+    throw new InvalidOperationException("JWT SecretKey is not configured.");
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -43,6 +52,15 @@ builder.Services
 builder.Services.AddAuthorization();
 
 var app = builder.Build();
+
+if (app.Environment.IsDevelopment())
+{
+    app.MapOpenApi();
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint("/openapi/v1.json", "API v1");
+    });
+}
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseAuthentication();

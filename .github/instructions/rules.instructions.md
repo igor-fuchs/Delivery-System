@@ -10,7 +10,7 @@ description: Use this prompt whenever the AI is asked to write, modify, or refac
 * Follow consistent naming conventions for variables, classes, and functions.
 * Prefer small, single-responsibility functions and classes.
 * Avoid unnecessary complexity and duplicated logic.
-* Add comments only when they improve clarity.
+* Add comments only when they improve clarity and we need documentation.
 
 2. Respect Project Architecture
 
