@@ -1,5 +1,5 @@
 ---
-name: "Register Decision Context"
+name: "Register Context"
 description: "Capture project decision context in a reusable, structured log entry"
 argument-hint: "Decision title, rationale, alternatives, impact, and next steps"
 agent: "agent"
@@ -19,6 +19,7 @@ Output format:
 ## Decision: <short title>
 Date: <YYYY-MM-DD>
 Status: Proposed | Accepted | Superseded
+File Path: ../.github/context/context.md
 
 ### Context
 - Problem being solved
