@@ -1,0 +1,12 @@
+.git
+.github
+.gitignore
+.gitattributes
+.devcontainer
+artifacts
+tests
+*.md
+.env
+.env.example
+docker-compose.yml
+Dockerfile
