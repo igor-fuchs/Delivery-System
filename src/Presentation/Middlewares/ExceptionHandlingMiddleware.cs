@@ -4,17 +4,36 @@ using DeliverySystem.Application.Exceptions;
 
 namespace DeliverySystem.Presentation.Middlewares;
 
+/// <summary>
+/// Middleware that catches unhandled exceptions and converts them into structured JSON error responses.
+/// Maps known exception types to appropriate HTTP status codes:
+/// <list type="bullet">
+///   <item><see cref="ValidationException"/> → 400 Bad Request</item>
+///   <item><see cref="ConflictException"/> → 409 Conflict</item>
+///   <item><see cref="UnauthorizedAccessException"/> → 401 Unauthorized</item>
+///   <item>All other exceptions → 500 Internal Server Error</item>
+/// </list>
+/// </summary>
 public sealed class ExceptionHandlingMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly ILogger<ExceptionHandlingMiddleware> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ExceptionHandlingMiddleware"/> class.
+    /// </summary>
+    /// <param name="next">The next middleware in the pipeline.</param>
+    /// <param name="logger">The logger instance.</param>
     public ExceptionHandlingMiddleware(RequestDelegate next, ILogger<ExceptionHandlingMiddleware> logger)
     {
         _next = next;
         _logger = logger;
     }
 
+    /// <summary>
+    /// Invokes the middleware, catching any exceptions that propagate from downstream.
+    /// </summary>
+    /// <param name="context">The current HTTP context.</param>
     public async Task InvokeAsync(HttpContext context)
     {
         try

@@ -1,5 +1,5 @@
 ---
-name: "Register Context"
+name: "register context"
 description: "Capture project decision context in a reusable, structured log entry"
 argument-hint: "Decision title, rationale, alternatives, impact, and next steps"
 agent: "agent"

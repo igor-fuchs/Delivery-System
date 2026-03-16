@@ -3,6 +3,10 @@ using FluentValidation;
 
 namespace DeliverySystem.Application.Validators;
 
+/// <summary>
+/// FluentValidation validator for <see cref="RegisterRequest"/>.
+/// Enforces name format, email format, and password complexity requirements.
+/// </summary>
 public sealed class RegisterRequestValidator : AbstractValidator<RegisterRequest>
 {
     public RegisterRequestValidator()

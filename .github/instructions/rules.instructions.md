@@ -29,5 +29,40 @@ After completing any change, the AI must ensure that the project remains functio
 If tests exist:
 *  Run or update tests to ensure they still pass.
 
-If tests do not exist:
-*  Suggest minimal tests that validate the new or modified behavior.
+4. Documentation Requirements
+
+The AI must always document public APIs, methods, and important logic.
+
+For backend (C# / .NET):
+
+* All public classes and methods must include XML documentation comments.
+* Include:
+  - Summary of the method
+  - Description of parameters
+  - Return value description
+  - Possible exceptions (when relevant)
+
+Example:
+
+/// <summary>
+/// Creates a new user in the system.
+/// </summary>
+/// <param name="request">User creation data.</param>
+/// <returns>Authentication token.</returns>
+/// <exception cref="ConflictException">Thrown when user already exists.</exception>
+
+For APIs:
+
+* Every endpoint must be documented using OpenAPI/Swagger annotations.
+* Include:
+  - Endpoint summary and description
+  - Request model description
+  - Response types (200, 400, 401, 409, etc.)
+  - Example responses when possible
+
+For complex logic:
+
+* Add inline comments explaining "why", not "what".
+* Avoid redundant comments.
+
+The AI must prioritize clarity and maintainability in documentation.

@@ -3,6 +3,10 @@ using FluentValidation;
 
 namespace DeliverySystem.Application.Validators;
 
+/// <summary>
+/// FluentValidation validator for <see cref="LoginRequest"/>.
+/// Ensures email and password are provided.
+/// </summary>
 public sealed class LoginRequestValidator : AbstractValidator<LoginRequest>
 {
     public LoginRequestValidator()

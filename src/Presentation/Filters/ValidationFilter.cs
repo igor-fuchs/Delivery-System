@@ -5,15 +5,25 @@ using ValidationException = DeliverySystem.Application.Exceptions.ValidationExce
 
 namespace DeliverySystem.Presentation.Filters;
 
+/// <summary>
+/// Action filter that automatically validates request models using FluentValidation.
+/// Throws a <see cref="ValidationException"/> when validation fails,
+/// which is then handled by the <see cref="DeliverySystem.Presentation.Middlewares.ExceptionHandlingMiddleware"/>.
+/// </summary>
 public sealed class ValidationFilter : IAsyncActionFilter
 {
     private readonly IServiceProvider _serviceProvider;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ValidationFilter"/> class.
+    /// </summary>
+    /// <param name="serviceProvider">The service provider used to resolve validators at runtime.</param>
     public ValidationFilter(IServiceProvider serviceProvider)
     {
         _serviceProvider = serviceProvider;
     }
 
+    /// <inheritdoc />
     public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
     {
         foreach (var argument in context.ActionArguments.Values)

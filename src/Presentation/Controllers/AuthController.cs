@@ -4,17 +4,32 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace DeliverySystem.Presentation.Controllers;
 
+/// <summary>
+/// API controller for authentication endpoints (register and login).
+/// </summary>
 [ApiController]
 [Route("api/[controller]")]
 public sealed class AuthController : ControllerBase
 {
     private readonly AuthService _authService;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="AuthController"/> class.
+    /// </summary>
+    /// <param name="authService">The authentication service.</param>
     public AuthController(AuthService authService)
     {
         _authService = authService;
     }
 
+    /// <summary>
+    /// Registers a new user.
+    /// </summary>
+    /// <param name="request">The registration payload containing name, email, and password.</param>
+    /// <returns>An <see cref="AuthResponse"/> with the user ID, email, and JWT token.</returns>
+    /// <response code="200">User registered successfully.</response>
+    /// <response code="400">Validation errors in the request.</response>
+    /// <response code="409">A user with the same email already exists.</response>
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterRequest request)
     {
@@ -22,6 +37,14 @@ public sealed class AuthController : ControllerBase
         return Ok(response);
     }
 
+    /// <summary>
+    /// Authenticates an existing user.
+    /// </summary>
+    /// <param name="request">The login payload containing email and password.</param>
+    /// <returns>An <see cref="AuthResponse"/> with the user ID, email, and JWT token.</returns>
+    /// <response code="200">Login successful.</response>
+    /// <response code="400">Validation errors in the request.</response>
+    /// <response code="401">Invalid email or password.</response>
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {

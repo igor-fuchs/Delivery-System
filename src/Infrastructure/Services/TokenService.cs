@@ -9,15 +9,24 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace DeliverySystem.Infrastructure.Services;
 
+/// <summary>
+/// JWT-based implementation of <see cref="ITokenService"/>.
+/// Generates signed tokens using HMAC-SHA256 and the settings from <see cref="JwtSettings"/>.
+/// </summary>
 public sealed class TokenService : ITokenService
 {
     private readonly JwtSettings _jwtSettings;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="TokenService"/> class.
+    /// </summary>
+    /// <param name="jwtOptions">The JWT configuration options.</param>
     public TokenService(IOptions<JwtSettings> jwtOptions)
     {
         _jwtSettings = jwtOptions.Value;
     }
 
+    /// <inheritdoc />
     public string GenerateToken(User user)
     {
         var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.SecretKey));
