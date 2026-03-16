@@ -1,3 +1,4 @@
+using System.Text.Encodings.Web;
 using DeliverySystem.Application.DTOs;
 using DeliverySystem.Application.Exceptions;
 using DeliverySystem.Application.Interfaces;
@@ -38,15 +39,17 @@ public sealed class AuthService
     /// <exception cref="ConflictException">Thrown when a user with the same email already exists.</exception>
     public async Task<AuthResponse> RegisterAsync(RegisterRequest request)
     {
-        var existing = await _userRepository.GetByEmailAsync(request.Email);
+        var email = HtmlEncoder.Default.Encode(request.Email);
+
+        var existing = await _userRepository.GetByEmailAsync(email);
         if (existing is not null) throw new ConflictException("User already exists.");
 
         var hash = _passwordHasher.Hash(request.Password);
-        var user = User.Create(request.Name, request.Email, hash);
+        var user = User.Create(request.Name, email, hash);
         await _userRepository.AddAsync(user);
 
         var token = _tokenService.GenerateToken(user);
-        return new AuthResponse(user.Id.ToString(), user.Email, token);
+        return new AuthResponse(user.Id.ToString(), email, token);
     }
 
     /// <summary>
