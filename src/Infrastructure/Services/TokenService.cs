@@ -26,7 +26,7 @@ public sealed class TokenService : ITokenService
     }
 
     /// <inheritdoc />
-    public string GenerateToken(Guid userId, string email, string name)
+    public string GenerateToken(Guid userId, string email)
     {
         var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.SecretKey));
         var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
@@ -35,7 +35,6 @@ public sealed class TokenService : ITokenService
         [
             new(JwtRegisteredClaimNames.Sub, userId.ToString()),
             new(JwtRegisteredClaimNames.Email, email),
-            new(JwtRegisteredClaimNames.Name, name),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         ];
 

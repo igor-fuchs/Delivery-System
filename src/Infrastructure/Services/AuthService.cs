@@ -42,7 +42,6 @@ public sealed class AuthService : IAuthService
         {
             UserName = email,
             Email = email,
-            Name = request.Name,
             CreatedAt = DateTime.UtcNow
         };
 
@@ -58,7 +57,7 @@ public sealed class AuthService : IAuthService
             throw new ValidationException(errors);
         }
 
-        var token = _tokenService.GenerateToken(user.Id, user.Email!, user.Name);
+        var token = _tokenService.GenerateToken(user.Id, user.Email!);
         return new AuthResponse(user.Id.ToString(), user.Email!, token);
     }
 
@@ -76,7 +75,7 @@ public sealed class AuthService : IAuthService
         if (!valid)
             throw new UnauthorizedAccessException("Invalid credentials.");
 
-        var token = _tokenService.GenerateToken(user.Id, user.Email!, user.Name);
+        var token = _tokenService.GenerateToken(user.Id, user.Email!);
         return new AuthResponse(user.Id.ToString(), user.Email!, token);
     }
 }

@@ -10,7 +10,6 @@ public interface ITokenService
     /// </summary>
     /// <param name="userId">The unique identifier of the user.</param>
     /// <param name="email">The user's email address.</param>
-    /// <param name="name">The user's full name.</param>
     /// <returns>A signed JWT string.</returns>
-    string GenerateToken(Guid userId, string email, string name);
+    string GenerateToken(Guid userId, string email);
 }
