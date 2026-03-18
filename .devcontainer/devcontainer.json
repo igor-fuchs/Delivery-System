@@ -12,13 +12,14 @@
       "extensions": [
         "ms-dotnettools.csdevkit",
         "ms-dotnettools.csharp",
-        "ms-azuretools.vscode-docker",
         "humao.rest-client",
-        "github.copilot"
+        "github.copilot",
+        "ms-mssql.mssql"
       ]
     }
   },
   "forwardPorts": [
-    8080
+    8080,
+    1433
   ]
 }

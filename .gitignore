@@ -55,3 +55,6 @@ CodeCoverage/
 *.VisualState.xml
 TestResult.xml
 nunit-*.xml
+
+# Build Results of database migrations
+src/Infrastructure/Data/Migrations/
