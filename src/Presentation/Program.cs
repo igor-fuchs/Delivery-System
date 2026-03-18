@@ -1,10 +1,12 @@
 using System.Text;
 using DeliverySystem.Application.Settings;
 using DeliverySystem.Infrastructure;
+using DeliverySystem.Infrastructure.Data;
 using DeliverySystem.Presentation.Filters;
 using DeliverySystem.Presentation.Middlewares;
 using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -17,7 +19,7 @@ builder.Services
     .ValidateDataAnnotations()
     .ValidateOnStart();
 
-builder.Services.AddInfrastructure();
+builder.Services.AddInfrastructure(builder.Configuration);
 
 builder.Services.AddValidatorsFromAssemblyContaining<DeliverySystem.Application.Validators.RegisterRequestValidator>();
 
@@ -30,7 +32,7 @@ builder.Services
 var jwtSettings = builder.Configuration.GetSection("Jwt").Get<JwtSettings>()
     ?? throw new InvalidOperationException("JWT settings section 'Jwt' is missing from configuration.");
 
-if (string.IsNullOrEmpty(jwtSettings.SecretKey)) 
+if (string.IsNullOrEmpty(jwtSettings.SecretKey))
     throw new InvalidOperationException("JWT SecretKey is not configured.");
 
 builder.Services

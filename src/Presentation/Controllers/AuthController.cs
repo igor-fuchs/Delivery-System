@@ -1,5 +1,5 @@
 using DeliverySystem.Application.DTOs;
-using DeliverySystem.Application.Services;
+using DeliverySystem.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DeliverySystem.Presentation.Controllers;
@@ -11,13 +11,13 @@ namespace DeliverySystem.Presentation.Controllers;
 [Route("api/[controller]")]
 public sealed class AuthController : ControllerBase
 {
-    private readonly AuthService _authService;
+    private readonly IAuthService _authService;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="AuthController"/> class.
     /// </summary>
     /// <param name="authService">The authentication service.</param>
-    public AuthController(AuthService authService)
+    public AuthController(IAuthService authService)
     {
         _authService = authService;
     }

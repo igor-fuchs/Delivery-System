@@ -3,7 +3,6 @@ using System.Security.Claims;
 using System.Text;
 using DeliverySystem.Application.Interfaces;
 using DeliverySystem.Application.Settings;
-using DeliverySystem.Domain.Entities;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
@@ -27,16 +26,16 @@ public sealed class TokenService : ITokenService
     }
 
     /// <inheritdoc />
-    public string GenerateToken(User user)
+    public string GenerateToken(Guid userId, string email, string name)
     {
         var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.SecretKey));
         var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
 
         Claim[] claims =
         [
-            new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-            new(JwtRegisteredClaimNames.Email, user.Email),
-            new(JwtRegisteredClaimNames.Name, user.Name),
+            new(JwtRegisteredClaimNames.Sub, userId.ToString()),
+            new(JwtRegisteredClaimNames.Email, email),
+            new(JwtRegisteredClaimNames.Name, name),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         ];
 

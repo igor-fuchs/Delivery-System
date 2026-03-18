@@ -1,5 +1,3 @@
-using DeliverySystem.Domain.Entities;
-
 namespace DeliverySystem.Application.Interfaces;
 
 /// <summary>
@@ -10,7 +8,9 @@ public interface ITokenService
     /// <summary>
     /// Generates a signed JWT for the specified user.
     /// </summary>
-    /// <param name="user">The user whose claims will be embedded in the token.</param>
+    /// <param name="userId">The unique identifier of the user.</param>
+    /// <param name="email">The user's email address.</param>
+    /// <param name="name">The user's full name.</param>
     /// <returns>A signed JWT string.</returns>
-    string GenerateToken(User user);
+    string GenerateToken(Guid userId, string email, string name);
 }
