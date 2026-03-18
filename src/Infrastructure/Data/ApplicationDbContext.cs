@@ -26,10 +26,6 @@ public sealed class ApplicationDbContext : IdentityDbContext<ApplicationUser, Id
 
         builder.Entity<ApplicationUser>(entity =>
         {
-            entity.Property(u => u.Name)
-                .HasMaxLength(200)
-                .IsRequired();
-
             entity.Property(u => u.CreatedAt)
                 .IsRequired();
         });
