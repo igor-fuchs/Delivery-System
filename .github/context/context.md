@@ -16,18 +16,18 @@ Status: Accepted
 - Created `AuthService` in **Application** to orchestrate register/login flows. It depends on `IUserRepository`, `ITokenService`, and `IPasswordHasher` — all defined as interfaces in Application.
 - Created `TokenService` (JWT via HMAC-SHA256), `PasswordHasher` (BCrypt), and `InMemoryUserRepository` in **Infrastructure**.
 - Created `AuthController` in **Presentation** with `POST /api/auth/register` and `POST /api/auth/login`.
-- JWT configuration bound to a strongly-typed `JwtSettings` class in **Application** using the Options pattern with `ValidateDataAnnotations()` and `ValidateOnStart()`.
+- JWT configuration bound to a strongly-typed `JwtOptions` class in **Application** using the Options pattern with `ValidateDataAnnotations()` and `ValidateOnStart()`.
 - `SecretKey` is not stored in `appsettings.json`; it comes from the `Jwt__SecretKey` environment variable (mapped from `JWT_SECRET_KEY` in GitHub Secrets or `.env`).
 
 ### Alternatives Considered
 - **ASP.NET Identity**: Full-featured but heavyweight for the current scope. Would introduce EF Core dependency prematurely. Rejected for now; can be adopted later.
 - **Storing key in appsettings.json**: Simpler but insecure. Rejected — keys come from environment variables only.
-- **IConfiguration injection in TokenService**: Originally used, replaced with `IOptions<JwtSettings>` for type safety and testability.
+- **IConfiguration injection in TokenService**: Originally used, replaced with `IOptions<JwtOptions>` for type safety and testability.
 
 ### Consequences
 - **Positive**: Clean separation — controller has no try/catch, service is testable, JWT config is validated at startup.
 - **Negative**: `InMemoryUserRepository` loses data on restart; acceptable as a placeholder.
-- **Risk**: `required` keyword on `JwtSettings` properties is compile-time only; config binder ignores it. Mitigated by `[Required]` data annotations + `ValidateOnStart()`.
+- **Risk**: `required` keyword on `JwtOptions` properties is compile-time only; config binder ignores it. Mitigated by `[Required]` data annotations + `ValidateOnStart()`.
 
 ### Validation Plan
 - Build check: `dotnet build` passes with zero errors and zero warnings.
@@ -36,7 +36,7 @@ Status: Accepted
 - Rollback: Revert the commits that added Domain/Application/Infrastructure/Presentation auth files.
 
 ### Implementation Notes
-- Key files: `Domain/Entities/User.cs`, `Application/Services/AuthService.cs`, `Application/Settings/JwtSettings.cs`, `Application/Interfaces/I*.cs`, `Application/DTOs/*.cs`, `Infrastructure/Services/TokenService.cs`, `Infrastructure/Services/PasswordHasher.cs`, `Infrastructure/Repositories/InMemoryUserRepository.cs`, `Infrastructure/DependencyInjection.cs`, `Presentation/Controllers/AuthController.cs`, `Presentation/Program.cs`.
+- Key files: `Domain/Entities/User.cs`, `Application/Services/AuthService.cs`, `Application/Options/JwtOptions.cs`, `Application/Interfaces/I*.cs`, `Application/DTOs/*.cs`, `Infrastructure/Services/TokenService.cs`, `Infrastructure/Services/PasswordHasher.cs`, `Infrastructure/Repositories/InMemoryUserRepository.cs`, `Infrastructure/DependencyInjection.cs`, `Presentation/Controllers/AuthController.cs`, `Presentation/Program.cs`.
 - GitHub Secrets: Create `JWT_SECRET_KEY` in repository settings.
 
 - [ ] Replace `InMemoryUserRepository` with EF Core implementation
@@ -95,27 +95,27 @@ Status: Accepted
 - A null `SecretKey` caused a runtime `ArgumentNullException` deep in the JWT middleware on the first request, producing a confusing stack trace.
 
 ### Decision
-- Created `JwtSettings` in **Application** with `[Required]` data annotations on all properties.
-- Registered via `AddOptions<JwtSettings>().BindConfiguration("Jwt").ValidateDataAnnotations().ValidateOnStart()` in `Program.cs` — the app fails immediately at startup with a clear error if any required setting is missing.
-- `TokenService` in **Infrastructure** now injects `IOptions<JwtSettings>` instead of `IConfiguration`.
-- `Program.cs` binds `JwtSettings` from config and uses the typed object to configure `JwtBearerOptions`.
+- Created `JwtOptions` in **Application** with `[Required]` data annotations on all properties.
+- Registered via `AddOptions<JwtOptions>().BindConfiguration("Jwt").ValidateDataAnnotations().ValidateOnStart()` in `Program.cs` — the app fails immediately at startup with a clear error if any required setting is missing.
+- `TokenService` in **Infrastructure** now injects `IOptions<JwtOptions>` instead of `IConfiguration`.
+- `Program.cs` binds `JwtOptions` from config and uses the typed object to configure `JwtBearerOptions`.
 
 ### Alternatives Considered
 - **`required` keyword only**: Compile-time constraint; config binder ignores it at runtime. Caused the original null crash. Rejected alone; `[Required]` + `ValidateOnStart()` needed.
 - **Manual validation in `Program.cs`**: Works but doesn't protect `TokenService` if config changes at runtime. Options validation is more robust.
 
 ### Consequences
-- **Positive**: Fail-fast at startup with clear `OptionsValidationException`; no magic strings; `TokenService` is easily testable with mock `IOptions<JwtSettings>`.
+- **Positive**: Fail-fast at startup with clear `OptionsValidationException`; no magic strings; `TokenService` is easily testable with mock `IOptions<JwtOptions>`.
 - **Negative**: None significant.
 - **Risk**: `appsettings.json` must not contain `SecretKey` — verified by `.env.example` documentation.
 
 ### Validation Plan
 - Runtime check: Start app without `Jwt__SecretKey` → `OptionsValidationException` at startup.
-- Tests to add: Unit test for `TokenService` with known `JwtSettings`.
+- Tests to add: Unit test for `TokenService` with known `JwtOptions`.
 
 ### Implementation Notes
-- Key files: `Application/Settings/JwtSettings.cs`, `Infrastructure/Services/TokenService.cs`, `Presentation/Program.cs`.
-- `JwtSettings` lives in Application because it's referenced by both Infrastructure (`TokenService`) and Presentation (`Program.cs`).
+- Key files: `Application/Options/JwtOptions.cs`, `Infrastructure/Services/TokenService.cs`, `Presentation/Program.cs`.
+- `JwtOptions` lives in Application because it's referenced by both Infrastructure (`TokenService`) and Presentation (`Program.cs`).
 
 - [ ] Add unit test for `TokenService` token generation and claim verification
 

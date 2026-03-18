@@ -1,13 +1,15 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace DeliverySystem.Application.Settings;
+namespace DeliverySystem.Application.Options;
 
 /// <summary>
-/// Strongly-typed configuration for JWT authentication.
+/// Strongly-typed options for JWT authentication.
 /// Bound to the <c>Jwt</c> configuration section.
 /// </summary>
-public sealed class JwtSettings
+public sealed class JwtOptions
 {
+    public const string SectionName = "Jwt";
+
     /// <summary>Gets the symmetric secret key used to sign and verify tokens.</summary>
     [Required]
     public required string SecretKey { get; init; }

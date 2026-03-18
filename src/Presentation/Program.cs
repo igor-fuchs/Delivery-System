@@ -1,5 +1,5 @@
 using System.Text;
-using DeliverySystem.Application.Settings;
+using DeliverySystem.Application.Options;
 using DeliverySystem.Infrastructure;
 using DeliverySystem.Infrastructure.Data;
 using DeliverySystem.Presentation.Filters;
@@ -14,8 +14,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddOpenApi();
 
 builder.Services
-    .AddOptions<JwtSettings>()
-    .BindConfiguration("Jwt")
+    .AddOptions<JwtOptions>()
+    .BindConfiguration(JwtOptions.SectionName)
     .ValidateDataAnnotations()
     .ValidateOnStart();
 
@@ -29,11 +29,7 @@ builder.Services
         options.Filters.Add<ValidationFilter>();
     });
 
-var jwtSettings = builder.Configuration.GetSection("Jwt").Get<JwtSettings>()
-    ?? throw new InvalidOperationException("JWT settings section 'Jwt' is missing from configuration.");
-
-if (string.IsNullOrEmpty(jwtSettings.SecretKey))
-    throw new InvalidOperationException("JWT SecretKey is not configured.");
+var jwtOptions = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()!;
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -45,9 +41,9 @@ builder.Services
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = jwtSettings.Issuer,
-            ValidAudience = jwtSettings.Audience,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.SecretKey))
+            ValidIssuer = jwtOptions.Issuer,
+            ValidAudience = jwtOptions.Audience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.SecretKey))
         };
     });
 
@@ -55,16 +51,14 @@ builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
-// Apply pending EF Core migrations automatically in development
 if (app.Environment.IsDevelopment())
 {
+    // Apply pending EF Core migrations automatically in development
     using var scope = app.Services.CreateScope();
     var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     dbContext.Database.Migrate();
-}
 
-if (app.Environment.IsDevelopment())
-{
+    // Enable OpenAPI/Swagger only in development
     app.MapOpenApi();
     app.UseSwaggerUI(options =>
     {
