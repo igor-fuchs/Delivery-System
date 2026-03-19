@@ -17,9 +17,9 @@ services:
       Jwt__Issuer: ${JWT__ISSUER}
       Jwt__Audience: ${JWT__AUDIENCE}
       Jwt__ExpirationMinutes: ${JWT__EXPIRATION_MINUTES}
-      ConnectionStrings__DefaultConnection: ${ConnectionStrings__DefaultConnection}
+      Database__ConnectionString: ${DATABASE__CONNECTION_STRING}
       Recaptcha__SecretKey: ${RECAPTCHA__SECRET_KEY}
-      Recaptcha__MinimumScore: ${RECAPTCHA__MINIMUM_SCORE:-0.5}
+      Recaptcha__MinimumScore: ${RECAPTCHA__MINIMUM_SCORE}
     depends_on:
       sqlserver:
         condition: service_healthy

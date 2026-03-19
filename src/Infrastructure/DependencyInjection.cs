@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace DeliverySystem.Infrastructure;
 
@@ -23,8 +24,17 @@ public static class DependencyInjection
     /// <returns>The same <see cref="IServiceCollection"/> for chaining.</returns>
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
-        services.AddDbContext<ApplicationDbContext>(options =>
-            options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
+        services
+            .AddOptions<DatabaseOptions>()
+            .BindConfiguration(DatabaseOptions.SectionName)
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        services.AddDbContext<ApplicationDbContext>((serviceProvider, options) =>
+        {
+            var dbOptions = serviceProvider.GetRequiredService<IOptions<DatabaseOptions>>().Value;
+            options.UseSqlServer(dbOptions.ConnectionString);
+        });
 
         services.AddIdentityCore<ApplicationUser>(options =>
             {

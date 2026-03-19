@@ -7,7 +7,6 @@ POST {{baseUrl}}/api/auth/register
 Content-Type: application/json
 
 {
-  "name": "John Doe",
   "email": "john@example.com",
   "password": "Password123!",
   "captchaToken": "your-captcha-token"

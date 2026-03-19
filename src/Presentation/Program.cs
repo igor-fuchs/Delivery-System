@@ -52,6 +52,26 @@ builder.Services.AddAuthorization();
 
 builder.Services.AddAuthRateLimiter(builder.Configuration);
 
+builder.Services
+    .AddOptions<CorsOptions>()
+    .BindConfiguration(CorsOptions.SectionName)
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+
+var corsConfig = builder.Configuration
+    .GetSection(CorsOptions.SectionName)
+    .Get<CorsOptions>()!;
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(CorsOptions.PolicyName, policy =>
+    {
+        policy.WithOrigins(corsConfig.AllowedOrigins)
+              .WithMethods(corsConfig.AllowedMethods)
+              .AllowAnyHeader();
+    });
+});
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())

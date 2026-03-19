@@ -3,6 +3,7 @@ using DeliverySystem.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using DeliverySystem.Application.Options;
+using Microsoft.AspNetCore.Cors;
 
 namespace DeliverySystem.Presentation.Controllers;
 
@@ -13,6 +14,7 @@ namespace DeliverySystem.Presentation.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [EnableRateLimiting(RateLimitOptions.AuthPolicyName)]
+[EnableCors(CorsOptions.PolicyName)]
 public sealed class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;

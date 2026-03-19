@@ -24,7 +24,7 @@ reCAPTCHA v3 is invisible — it runs in the background and returns a score from
 Set the following environment variable in your environment (`.env`, server config, CI/CD secrets, etc.):
 
 ```
-CAPTCHA__SECRET_KEY=your-captcha-secret-key
+RECAPTCHA__SECRET_KEY=your-captcha-secret-key
 ```
 
 The double underscore (`__`) is the ASP.NET Core convention for nested configuration sections.
@@ -91,6 +91,6 @@ For local development, you can use a **test secret key** provided by Google that
 | Site key   | `6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI` |
 | Secret key | `6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe` |
 
-Set the test secret key as your `CAPTCHA__SECRET_KEY` environment variable while developing locally.
+Set the test secret key as your `RECAPTCHA__SECRET_KEY` environment variable while developing locally.
 
 > These test keys will always pass validation regardless of the token sent.
