@@ -14,12 +14,8 @@ services:
       ASPNETCORE_URLS: http://+:8080
       DOTNET_USE_POLLING_FILE_WATCHER: "true"
       Jwt__SecretKey: ${JWT__SECRET_KEY}
-      Jwt__Issuer: ${JWT__ISSUER}
-      Jwt__Audience: ${JWT__AUDIENCE}
-      Jwt__ExpirationMinutes: ${JWT__EXPIRATION_MINUTES}
       Database__ConnectionString: ${DATABASE__CONNECTION_STRING}
       Recaptcha__SecretKey: ${RECAPTCHA__SECRET_KEY}
-      Recaptcha__MinimumScore: ${RECAPTCHA__MINIMUM_SCORE}
     depends_on:
       sqlserver:
         condition: service_healthy
