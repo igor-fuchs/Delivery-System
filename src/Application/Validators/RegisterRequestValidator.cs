@@ -24,5 +24,8 @@ public sealed class RegisterRequestValidator : AbstractValidator<RegisterRequest
             .Matches(@"[a-z]").WithMessage("Password must contain at least one lowercase letter.")
             .Matches(@"\d").WithMessage("Password must contain at least one number.")
             .Matches(@"[@$!%*?&]").WithMessage("Password must contain at least one special character.");
+
+        RuleFor(x => x.CaptchaToken)
+            .NotEmpty().WithMessage("Captcha token is required.");
     }
 }

@@ -9,7 +9,8 @@ Content-Type: application/json
 {
   "name": "John Doe",
   "email": "john@example.com",
-  "password": "Password123!"
+  "password": "Password123!",
+  "captchaToken": "your-captcha-token"
 }
 
 ### Login
@@ -19,7 +20,8 @@ Content-Type: application/json
 
 {
   "email": "john@example.com",
-  "password": "Password123!"
+  "password": "Password123!",
+  "captchaToken": "your-captcha-token"
 }
 
 ### ── Authenticated request  ─────────────────────────────────────

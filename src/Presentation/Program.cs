@@ -2,6 +2,7 @@ using System.Text;
 using DeliverySystem.Application.Options;
 using DeliverySystem.Infrastructure;
 using DeliverySystem.Infrastructure.Data;
+using DeliverySystem.Presentation.Extensions;
 using DeliverySystem.Presentation.Filters;
 using DeliverySystem.Presentation.Middlewares;
 using FluentValidation;
@@ -49,6 +50,8 @@ builder.Services
 
 builder.Services.AddAuthorization();
 
+builder.Services.AddAuthRateLimiter(builder.Configuration);
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -67,6 +70,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

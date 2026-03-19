@@ -17,5 +17,8 @@ public sealed class LoginRequestValidator : AbstractValidator<LoginRequest>
 
         RuleFor(x => x.Password)
             .NotEmpty().WithMessage("Password is required.");
+
+        RuleFor(x => x.CaptchaToken)
+            .NotEmpty().WithMessage("Captcha token is required.");
     }
 }

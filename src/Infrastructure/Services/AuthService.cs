@@ -10,28 +10,37 @@ namespace DeliverySystem.Infrastructure.Services;
 /// <summary>
 /// Identity-based implementation of <see cref="IAuthService"/>.
 /// Uses <see cref="UserManager{TUser}"/> for user creation, password verification,
-/// and <see cref="ITokenService"/> for JWT generation.
+/// <see cref="ITokenService"/> for JWT generation, and <see cref="ICaptchaService"/> for CAPTCHA validation.
 /// </summary>
 public sealed class AuthService : IAuthService
 {
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly ITokenService _tokenService;
+    private readonly ICaptchaService _captchaService;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="AuthService"/> class.
     /// </summary>
     /// <param name="userManager">The Identity user manager.</param>
     /// <param name="tokenService">Service for JWT generation.</param>
-    public AuthService(UserManager<ApplicationUser> userManager, ITokenService tokenService)
+    /// <param name="captchaService">Service for CAPTCHA token verification.</param>
+    public AuthService(
+        UserManager<ApplicationUser> userManager,
+        ITokenService tokenService,
+        ICaptchaService captchaService)
     {
         _userManager = userManager;
         _tokenService = tokenService;
+        _captchaService = captchaService;
     }
 
     /// <inheritdoc />
     /// <exception cref="ConflictException">Thrown when a user with the same email already exists.</exception>
     public async Task<AuthResponse> RegisterAsync(RegisterRequest request)
     {
+        await _captchaService.ValidateAsync(request.CaptchaToken);
+
+        // Input Sanization
         var email = HtmlEncoder.Default.Encode(request.Email);
 
         var existing = await _userManager.FindByEmailAsync(email);
@@ -47,6 +56,7 @@ public sealed class AuthService : IAuthService
 
         var result = await _userManager.CreateAsync(user, request.Password);
 
+        // Identity errors are grouped by code and returned as a dictionary of error messages.
         if (!result.Succeeded)
         {
             var errors = result.Errors
@@ -65,6 +75,9 @@ public sealed class AuthService : IAuthService
     /// <exception cref="UnauthorizedAccessException">Thrown when the email is not found or the password is incorrect.</exception>
     public async Task<AuthResponse> LoginAsync(LoginRequest request)
     {
+        await _captchaService.ValidateAsync(request.CaptchaToken);
+
+        // Input Sanization
         var email = HtmlEncoder.Default.Encode(request.Email);
 
         var user = await _userManager.FindByEmailAsync(email);

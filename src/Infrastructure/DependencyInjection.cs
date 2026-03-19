@@ -1,4 +1,5 @@
 using DeliverySystem.Application.Interfaces;
+using DeliverySystem.Application.Options;
 using DeliverySystem.Infrastructure.Data;
 using DeliverySystem.Infrastructure.Services;
 using Microsoft.AspNetCore.Identity;
@@ -39,6 +40,18 @@ public static class DependencyInjection
 
         services.AddSingleton<ITokenService, TokenService>();
         services.AddScoped<IAuthService, AuthService>();
+
+        services
+            .AddOptions<RecaptchaOptions>()
+            .BindConfiguration(RecaptchaOptions.SectionName)
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        services.AddHttpClient<ICaptchaService, RecaptchaService>(client =>
+        {
+            client.BaseAddress = new Uri("https://www.google.com/recaptcha/api/");
+            client.Timeout = TimeSpan.FromSeconds(5);
+        });
 
         return services;
     }
