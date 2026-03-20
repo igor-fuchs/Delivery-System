@@ -11,7 +11,7 @@ public sealed class GoogleLoginRequestValidator : AbstractValidator<GoogleLoginR
 {
     public GoogleLoginRequestValidator()
     {
-        RuleFor(x => x.IdToken)
+        RuleFor(x => x.Token)
             .NotEmpty().WithMessage("Google ID token is required.");
     }
 }

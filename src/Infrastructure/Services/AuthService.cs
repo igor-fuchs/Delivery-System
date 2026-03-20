@@ -121,10 +121,10 @@ public sealed class AuthService : IAuthService
         {
             var settings = new GoogleJsonWebSignature.ValidationSettings
             {
-                Audience = [_googleOptions.WebClientId, _googleOptions.MobileClientId]
+                Audience = [_googleOptions.WebClientId]
             };
 
-            payload = await GoogleJsonWebSignature.ValidateAsync(request.IdToken, settings);
+            payload = await GoogleJsonWebSignature.ValidateAsync(request.Token, settings);
         }
         catch (InvalidJwtException)
         {
