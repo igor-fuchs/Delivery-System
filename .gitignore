@@ -9,7 +9,7 @@
 
 # Environment secrets
 .env
-appsettings.Development.json
+appsettings.**.json
 
 # Build results
 [Dd]ebug/
