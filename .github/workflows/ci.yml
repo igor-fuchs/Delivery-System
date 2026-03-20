@@ -4,7 +4,10 @@ on:
   workflow_dispatch:
   
   pull_request:
-    branches: [main, develop]
+    branches: [develop]
+
+  push:
+    branches: [main]
 
 permissions:
   contents: read
