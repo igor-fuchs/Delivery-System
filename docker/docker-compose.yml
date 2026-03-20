@@ -1,13 +1,13 @@
 services:
   api:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: docker/Dockerfile
     container_name: delivery-system-api
     ports:
       - "8080:8080"
     volumes:
-      - .:/workspace
+      - ..:/workspace
       - /workspace/artifacts
     environment:
       ASPNETCORE_ENVIRONMENT: Development
@@ -28,8 +28,8 @@ services:
       - "1433:1433"
     environment:
       ACCEPT_EULA: "Y"
-      SA_PASSWORD: ${SA_PASSWORD}
-      MSSQL_PID: ${MSSQL_PID}
+      SA_PASSWORD: ${DATABASE__SA_PASSWORD}
+      MSSQL_PID: ${DATABASE__MSSQL_PID}
     volumes:
       - sqlserver-data:/var/opt/mssql
     healthcheck:

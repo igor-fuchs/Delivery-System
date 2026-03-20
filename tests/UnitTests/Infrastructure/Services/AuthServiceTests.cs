@@ -21,8 +21,7 @@ public sealed class AuthServiceTests
 
     private static readonly GoogleOptions TestGoogleOptions = new()
     {
-        WebClientId = "web-client-id",
-        MobileClientId = "mobile-client-id"
+        WebClientId = "web-client-id"
     };
 
     public AuthServiceTests()

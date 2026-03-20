@@ -27,7 +27,7 @@ public sealed class GoogleLoginRequestValidatorTests
 
         var result = await _sut.TestValidateAsync(request);
 
-        result.ShouldHaveValidationErrorFor(x => x.IdToken)
+        result.ShouldHaveValidationErrorFor(x => x.Token)
               .WithErrorMessage("Google ID token is required.");
     }
 }
