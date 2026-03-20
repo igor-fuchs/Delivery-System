@@ -3,10 +3,6 @@ name: CD
 on:
   workflow_dispatch:
 
-  workflow_run:
-    workflows: [CI]
-    types: [completed]
-
 permissions:
   contents: read
   packages: write
@@ -19,10 +15,7 @@ jobs:
   publish:
     name: Build & Publish Docker Image
     runs-on: ubuntu-latest
-    if: >-
-      github.event_name == 'workflow_dispatch' ||
-      (github.event.workflow_run.conclusion == 'success' &&
-       github.event.workflow_run.head_branch == 'main')
+    if: github.ref_name == 'main'
 
     steps:
       - name: Checkout repository
