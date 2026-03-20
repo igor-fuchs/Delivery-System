@@ -18,17 +18,14 @@ namespace DeliverySystem.Presentation.Controllers;
 public sealed class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
-    private readonly IGoogleAuthService _googleAuthService;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="AuthController"/> class.
     /// </summary>
     /// <param name="authService">The authentication service.</param>
-    /// <param name="googleAuthService">The Google OAuth2 authentication service.</param>
-    public AuthController(IAuthService authService, IGoogleAuthService googleAuthService)
+    public AuthController(IAuthService authService)
     {
         _authService = authService;
-        _googleAuthService = googleAuthService;
     }
 
     /// <summary>
@@ -72,10 +69,11 @@ public sealed class AuthController : ControllerBase
     }
 
     /// <summary>
-    /// Authenticates a user via a Google ID token.
-    /// If the user does not exist, a new account is created and linked to Google.
+    /// Authenticates a user via Google OAuth2 ID token.
+    /// Creates the user automatically if they don't already exist.
+    /// Supports both web and mobile clients.
     /// </summary>
-    /// <param name="request">The request payload containing the Google ID token obtained from the client-side OAuth2 flow.</param>
+    /// <param name="request">The Google login payload containing the ID token from Google Sign-In.</param>
     /// <returns>An <see cref="AuthResponse"/> with the user ID, email, and JWT token.</returns>
     /// <response code="200">Google login successful.</response>
     /// <response code="400">Validation errors in the request.</response>
@@ -88,7 +86,7 @@ public sealed class AuthController : ControllerBase
     [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
     public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginRequest request)
     {
-        var response = await _googleAuthService.LoginAsync(request);
+        var response = await _authService.GoogleLoginAsync(request);
         return Ok(response);
     }
 }

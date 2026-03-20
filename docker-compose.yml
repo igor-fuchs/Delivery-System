@@ -16,7 +16,6 @@ services:
       Jwt__SecretKey: ${JWT__SECRET_KEY}
       Database__ConnectionString: ${DATABASE__CONNECTION_STRING}
       Recaptcha__SecretKey: ${RECAPTCHA__SECRET_KEY}
-      Google__ClientId: ${GOOGLE__CLIENT_ID}
     depends_on:
       sqlserver:
         condition: service_healthy
