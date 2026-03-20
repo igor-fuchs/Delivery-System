@@ -18,14 +18,17 @@ namespace DeliverySystem.Presentation.Controllers;
 public sealed class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
+    private readonly IGoogleAuthService _googleAuthService;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="AuthController"/> class.
     /// </summary>
     /// <param name="authService">The authentication service.</param>
-    public AuthController(IAuthService authService)
+    /// <param name="googleAuthService">The Google OAuth2 authentication service.</param>
+    public AuthController(IAuthService authService, IGoogleAuthService googleAuthService)
     {
         _authService = authService;
+        _googleAuthService = googleAuthService;
     }
 
     /// <summary>
@@ -65,6 +68,27 @@ public sealed class AuthController : ControllerBase
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
         var response = await _authService.LoginAsync(request);
+        return Ok(response);
+    }
+
+    /// <summary>
+    /// Authenticates a user via a Google ID token.
+    /// If the user does not exist, a new account is created and linked to Google.
+    /// </summary>
+    /// <param name="request">The request payload containing the Google ID token obtained from the client-side OAuth2 flow.</param>
+    /// <returns>An <see cref="AuthResponse"/> with the user ID, email, and JWT token.</returns>
+    /// <response code="200">Google login successful.</response>
+    /// <response code="400">Validation errors in the request.</response>
+    /// <response code="401">Invalid or expired Google ID token.</response>
+    /// <response code="429">Too many requests. Rate limit exceeded.</response>
+    [HttpPost("google")]
+    [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
+    public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginRequest request)
+    {
+        var response = await _googleAuthService.LoginAsync(request);
         return Ok(response);
     }
 }

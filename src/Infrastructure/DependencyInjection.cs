@@ -50,6 +50,13 @@ public static class DependencyInjection
 
         services.AddSingleton<ITokenService, TokenService>();
         services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<IGoogleAuthService, GoogleAuthService>();
+
+        services
+            .AddOptions<GoogleOptions>()
+            .BindConfiguration(GoogleOptions.SectionName)
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
 
         services
             .AddOptions<RecaptchaOptions>()
