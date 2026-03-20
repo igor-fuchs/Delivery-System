@@ -1,6 +1,6 @@
 {
   "name": "Delivery System",
-  "dockerComposeFile": "../docker-compose.yml",
+  "dockerComposeFile": "../docker/docker-compose.yml",
   "service": "api",
   "workspaceFolder": "/workspace",
   "customizations": {

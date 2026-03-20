@@ -58,16 +58,14 @@ builder.Services
     .ValidateDataAnnotations()
     .ValidateOnStart();
 
-var corsConfig = builder.Configuration
-    .GetSection(CorsOptions.SectionName)
-    .Get<CorsOptions>()!;
+var corsOption = builder.Configuration.GetSection(CorsOptions.SectionName).Get<CorsOptions>()!;
 
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(CorsOptions.PolicyName, policy =>
     {
-        policy.WithOrigins(corsConfig.AllowedOrigins)
-              .WithMethods(corsConfig.AllowedMethods)
+        policy.WithOrigins(corsOption.AllowedOrigins)
+              .WithMethods(corsOption.AllowedMethods)
               .AllowAnyHeader();
     });
 });
@@ -91,6 +89,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseRateLimiter();
+app.UseCors(CorsOptions.PolicyName);
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

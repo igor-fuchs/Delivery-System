@@ -3,7 +3,7 @@ using DeliverySystem.Application.DTOs;
 namespace DeliverySystem.Application.Interfaces;
 
 /// <summary>
-/// Abstraction for authentication operations (registration and login).
+/// Abstraction for authentication operations (registration, login, and external provider login).
 /// </summary>
 public interface IAuthService
 {
@@ -22,4 +22,13 @@ public interface IAuthService
     /// <returns>An <see cref="AuthResponse"/> containing the user ID, email, and JWT token.</returns>
     /// <exception cref="UnauthorizedAccessException">Thrown when the email is not found or the password is incorrect.</exception>
     Task<AuthResponse> LoginAsync(LoginRequest request);
+
+    /// <summary>
+    /// Authenticates a user via a Google ID token. Creates the user if they don't already exist.
+    /// Supports both web and mobile clients.
+    /// </summary>
+    /// <param name="request">The Google login data containing the ID token.</param>
+    /// <returns>An <see cref="AuthResponse"/> containing the user ID, email, and JWT token.</returns>
+    /// <exception cref="UnauthorizedAccessException">Thrown when the Google ID token is invalid or expired.</exception>
+    Task<AuthResponse> GoogleLoginAsync(GoogleLoginRequest request);
 }

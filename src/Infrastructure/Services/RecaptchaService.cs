@@ -38,7 +38,7 @@ public sealed class RecaptchaService : ICaptchaService
         if (!response.IsSuccessStatusCode)
         {
             _logger.LogWarning("reCAPTCHA request failed with status {StatusCode}", response.StatusCode);
-            ThrowValidationException();
+            return false;
         }
 
         var result = await response.Content.ReadFromJsonAsync<RecaptchaResponse>(cancellationToken);
@@ -47,14 +47,14 @@ public sealed class RecaptchaService : ICaptchaService
         {
             _logger.LogWarning("reCAPTCHA verification failed. Error codes: {ErrorCodes}",
                 string.Join(", ", result?.ErrorCodes ?? Array.Empty<string>()));
-            ThrowValidationException();
+            return false;
         }
 
         if (result!.Score.HasValue && result.Score.Value < _options.MinimumScore)
         {
             _logger.LogWarning("reCAPTCHA score {Score} is below minimum {MinimumScore}",
                 result.Score.Value, _options.MinimumScore);
-            ThrowValidationException();
+            return false;
         }
 
         return true;
@@ -75,15 +75,6 @@ public sealed class RecaptchaService : ICaptchaService
         return await _httpClient.PostAsync("siteverify", content, cancellationToken);
     }
 
-    private static void ThrowValidationException()
-    {
-        var errors = new Dictionary<string, string[]>
-        {
-            ["captchaToken"] = ["Invalid or expired CAPTCHA token."]
-        };
-
-        throw new ValidationException(errors);
-    }
     #endregion
 
     #region Private DTOs

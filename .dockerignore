@@ -8,5 +8,6 @@ tests
 *.md
 .env
 .env.example
-docker-compose.yml
-Dockerfile
+docker/docker-compose.yml
+docker/docker-compose.prod.yml
+scripts

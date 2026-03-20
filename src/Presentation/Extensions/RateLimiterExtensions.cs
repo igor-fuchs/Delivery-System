@@ -46,22 +46,6 @@ public static class RateLimiterExtensions
                 limiter.QueueLimit = 0;
             });
 
-            // Custom response for rejected requests
-            options.OnRejected = async (context, cancellationToken) =>
-            {
-                context.HttpContext.Response.ContentType = "application/json";
-
-                if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
-                {
-                    context.HttpContext.Response.Headers.RetryAfter = ((int)retryAfter.TotalSeconds).ToString();
-                }
-
-                await context.HttpContext.Response.WriteAsJsonAsync(new
-                {
-                    message = "Too many requests. Please try again later."
-                }, cancellationToken);
-            };
-
             // Global IP-based limiter applied to every request
             options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(_ =>
                 RateLimitPartition.GetFixedWindowLimiter(

@@ -67,4 +67,26 @@ public sealed class AuthController : ControllerBase
         var response = await _authService.LoginAsync(request);
         return Ok(response);
     }
+
+    /// <summary>
+    /// Authenticates a user via Google OAuth2 ID token.
+    /// Creates the user automatically if they don't already exist.
+    /// Supports both web and mobile clients.
+    /// </summary>
+    /// <param name="request">The Google login payload containing the ID token from Google Sign-In.</param>
+    /// <returns>An <see cref="AuthResponse"/> with the user ID, email, and JWT token.</returns>
+    /// <response code="200">Google login successful.</response>
+    /// <response code="400">Validation errors in the request.</response>
+    /// <response code="401">Invalid or expired Google ID token.</response>
+    /// <response code="429">Too many requests. Rate limit exceeded.</response>
+    [HttpPost("google")]
+    [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
+    public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginRequest request)
+    {
+        var response = await _authService.GoogleLoginAsync(request);
+        return Ok(response);
+    }
 }

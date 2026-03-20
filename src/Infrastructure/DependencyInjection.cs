@@ -52,6 +52,12 @@ public static class DependencyInjection
         services.AddScoped<IAuthService, AuthService>();
 
         services
+            .AddOptions<GoogleOptions>()
+            .BindConfiguration(GoogleOptions.SectionName)
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        services
             .AddOptions<RecaptchaOptions>()
             .BindConfiguration(RecaptchaOptions.SectionName)
             .ValidateDataAnnotations()

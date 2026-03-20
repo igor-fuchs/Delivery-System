@@ -15,7 +15,7 @@ Copie o arquivo de exemplo e preencha as variáveis:
 cp .env.example .env
 ```
 
-O `.env` já vem com valores funcionais para desenvolvimento local. A connection string aponta para o container `sqlserver` definido no `docker-compose.yml`.
+O `.env` já vem com valores funcionais para desenvolvimento local. A connection string aponta para o container `sqlserver` definido no `docker/docker-compose.yml`.
 
 > **O arquivo `.env` é gitignored e nunca deve ser commitado.**
 
@@ -24,7 +24,7 @@ O `.env` já vem com valores funcionais para desenvolvimento local. A connection
 ## Subindo os containers
 
 ```bash
-docker compose up --build
+docker compose -f docker/docker-compose.yml up --build
 ```
 
 Isso irá:
