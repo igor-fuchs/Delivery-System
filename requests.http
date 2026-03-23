@@ -23,6 +23,15 @@ Content-Type: application/json
   "captchaToken": "your-captcha-token"
 }
 
+### Login with Google
+# @name googleLogin
+POST {{baseUrl}}/api/auth/google-login
+Content-Type: application/json
+
+{
+  "token": "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.invalid-signature",
+}
+
 ### ── Authenticated request  ─────────────────────────────────────
 
 @token = {{login.response.body.token}}

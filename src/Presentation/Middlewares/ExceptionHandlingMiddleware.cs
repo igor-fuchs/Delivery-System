@@ -11,6 +11,7 @@ namespace DeliverySystem.Presentation.Middlewares;
 ///   <item><see cref="ValidationException"/> → 400 Bad Request</item>
 ///   <item><see cref="ConflictException"/> → 409 Conflict</item>
 ///   <item><see cref="UnauthorizedAccessException"/> → 401 Unauthorized</item>
+///   <item><see cref="ServiceUnavailableException"/> → 503 Service Unavailable</item>
 ///   <item>All other exceptions → 500 Internal Server Error</item>
 /// </list>
 /// </summary>
@@ -61,6 +62,10 @@ public sealed class ExceptionHandlingMiddleware
             UnauthorizedAccessException unauthorizedEx => (
                 HttpStatusCode.Unauthorized,
                 new ErrorResponse(unauthorizedEx.Message)
+            ),
+            ServiceUnavailableException serviceUnavailableEx => (
+                HttpStatusCode.ServiceUnavailable,
+                new ErrorResponse(serviceUnavailableEx.Message)
             ),
             _ => (
                 HttpStatusCode.InternalServerError,

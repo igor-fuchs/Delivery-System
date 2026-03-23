@@ -131,6 +131,11 @@ public sealed class AuthService : IAuthService
             _logger.LogWarning("Google login attempt with invalid ID token");
             throw new UnauthorizedAccessException("Invalid Google ID token.");
         }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogError(ex, "Failed to reach Google JWKS endpoint");
+            throw new ServiceUnavailableException("Failed to reach Google JWKS endpoint.");
+        }
 
         // Reject tokens where Google has not verified the email address.
         if (!payload.EmailVerified)

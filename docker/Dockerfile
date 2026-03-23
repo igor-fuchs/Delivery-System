@@ -4,4 +4,4 @@ WORKDIR /workspace
 
 EXPOSE 8080
 
-CMD ["sh", "-c", "dotnet restore && exec dotnet watch run --project src/Presentation/Presentation.csproj"]
+CMD ["sh", "-c", "dotnet restore src/Presentation/Presentation.csproj && exec dotnet watch run --no-restore --project src/Presentation/Presentation.csproj"]
