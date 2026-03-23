@@ -152,8 +152,7 @@ public sealed class AuthService : IAuthService
         var user = await _userManager.FindByEmailAsync(email);
 
         // Auto-register the user on first Google login.
-        // EmailConfirmed is set to true because Google has already verified ownership
-        // of the address — no additional email confirmation step is needed.
+        // EmailConfirmed is set to true because Google has already verified ownership of the address.
         if (user is null)
         {
             user = new ApplicationUser
