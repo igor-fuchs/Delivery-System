@@ -95,3 +95,9 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+/// <summary>
+/// Exposes the auto-generated Program class so that
+/// <c>WebApplicationFactory&lt;Program&gt;</c> can reference it from integration tests.
+/// </summary>
+public partial class Program;
