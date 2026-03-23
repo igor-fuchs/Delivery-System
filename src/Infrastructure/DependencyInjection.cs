@@ -58,16 +58,29 @@ public static class DependencyInjection
             .ValidateOnStart();
 
         services
-            .AddOptions<RecaptchaOptions>()
-            .BindConfiguration(RecaptchaOptions.SectionName)
+            .AddOptions<GoogleOptions>()
+            .BindConfiguration(GoogleOptions.SectionName)
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
-        services.AddHttpClient<ICaptchaService, RecaptchaService>(client =>
+        if (environment.IsDevelopment())
         {
-            client.BaseAddress = new Uri("https://www.google.com/recaptcha/api/");
-            client.Timeout = TimeSpan.FromSeconds(5);
-        });
+            services.AddSingleton<ICaptchaService, FakeCaptchaService>();
+        }
+        else
+        {
+            services
+                .AddOptions<RecaptchaOptions>()
+                .BindConfiguration(RecaptchaOptions.SectionName)
+                .ValidateDataAnnotations()
+                .ValidateOnStart();
+
+            services.AddHttpClient<ICaptchaService, RecaptchaService>(client =>
+            {
+                client.BaseAddress = new Uri("https://www.google.com/recaptcha/api/");
+                client.Timeout = TimeSpan.FromSeconds(5);
+            });
+        }
 
         return services;
     }
