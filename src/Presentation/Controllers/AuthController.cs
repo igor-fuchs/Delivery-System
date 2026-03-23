@@ -14,7 +14,7 @@ namespace DeliverySystem.Presentation.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [EnableRateLimiting(RateLimitOptions.AuthPolicyName)]
-[EnableCors(CorsOptions.PolicyName)]
+[EnableCors(CorsOptions.AuthPolicyName)]
 public sealed class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;

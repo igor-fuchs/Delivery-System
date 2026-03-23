@@ -1,7 +1,9 @@
 using System.Text;
 using DeliverySystem.Application.Options;
+using DeliverySystem.Domain.Constants;
 using DeliverySystem.Infrastructure;
 using DeliverySystem.Infrastructure.Data;
+using DeliverySystem.Infrastructure.Services;
 using DeliverySystem.Presentation.Extensions;
 using DeliverySystem.Presentation.Filters;
 using DeliverySystem.Presentation.Middlewares;
@@ -20,7 +22,7 @@ builder.Services
     .ValidateDataAnnotations()
     .ValidateOnStart();
 
-builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddInfrastructure(builder.Configuration, builder.Environment);
 
 builder.Services.AddValidatorsFromAssemblyContaining<DeliverySystem.Application.Validators.RegisterRequestValidator>();
 
@@ -48,7 +50,11 @@ builder.Services
         };
     });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy(AppRoles.DefaultPolicy, policy =>
+        policy.RequireRole(AppRoles.Admin, AppRoles.User));
+});
 
 builder.Services.AddAuthRateLimiter(builder.Configuration);
 
@@ -62,10 +68,10 @@ var corsOption = builder.Configuration.GetSection(CorsOptions.SectionName).Get<C
 
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy(CorsOptions.PolicyName, policy =>
+    options.AddPolicy(CorsOptions.AuthPolicyName, policy =>
     {
-        policy.WithOrigins(corsOption.AllowedOrigins)
-              .WithMethods(corsOption.AllowedMethods)
+        policy.WithOrigins(corsOption.AuthAllowedOrigins)
+              .WithMethods(corsOption.AuthAllowedMethods)
               .AllowAnyHeader();
     });
 });
@@ -79,6 +85,10 @@ if (app.Environment.IsDevelopment())
     var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     dbContext.Database.Migrate();
 
+    // Seed roles and admin user
+    var seeder = scope.ServiceProvider.GetRequiredService<DatabaseSeeder>();
+    await seeder.SeedAsync();
+
     // Enable OpenAPI/Swagger only in development
     app.MapOpenApi();
     app.UseSwaggerUI(options =>
@@ -89,15 +99,9 @@ if (app.Environment.IsDevelopment())
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseRateLimiter();
-app.UseCors(CorsOptions.PolicyName);
+app.UseCors(CorsOptions.AuthPolicyName);
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
-
-/// <summary>
-/// Exposes the auto-generated Program class so that
-/// <c>WebApplicationFactory&lt;Program&gt;</c> can reference it from integration tests.
-/// </summary>
-public partial class Program;

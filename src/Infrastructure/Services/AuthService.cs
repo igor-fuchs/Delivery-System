@@ -2,6 +2,7 @@ using DeliverySystem.Application.DTOs;
 using DeliverySystem.Application.Exceptions;
 using DeliverySystem.Application.Interfaces;
 using DeliverySystem.Application.Options;
+using DeliverySystem.Domain.Constants;
 using DeliverySystem.Infrastructure.Data;
 using Google.Apis.Auth;
 using Microsoft.AspNetCore.Identity;
@@ -73,9 +74,11 @@ public sealed class AuthService : IAuthService
         if (!result.Succeeded)
             throw new ValidationException(BuildValidationErrors(result.Errors));
 
+        await _userManager.AddToRoleAsync(user, AppRoles.User);
+
         _logger.LogInformation("New user registered with ID {UserId}", user.Id);
 
-        var token = _tokenService.GenerateToken(user.Id, email);
+        var token = _tokenService.GenerateToken(user.Id, email, AppRoles.User);
         return new AuthResponse(user.Id.ToString(), email, token);
     }
 
@@ -106,7 +109,10 @@ public sealed class AuthService : IAuthService
             throw new UnauthorizedAccessException("Invalid credentials.");
         }
 
-        var token = _tokenService.GenerateToken(user.Id, user.Email!);
+        var roles = await _userManager.GetRolesAsync(user);
+        var role = roles.FirstOrDefault() ?? AppRoles.User;
+
+        var token = _tokenService.GenerateToken(user.Id, user.Email!, role);
         return new AuthResponse(user.Id.ToString(), user.Email!, token);
     }
 
@@ -166,11 +172,16 @@ public sealed class AuthService : IAuthService
             var result = await _userManager.CreateAsync(user);
             if (!result.Succeeded)
                 throw new ValidationException(BuildValidationErrors(result.Errors));
+
+            await _userManager.AddToRoleAsync(user, AppRoles.User);
         }
 
         _logger.LogInformation("Google login succeeded for user {UserId}", user.Id);
 
-        var token = _tokenService.GenerateToken(user.Id, user.Email!);
+        var roles = await _userManager.GetRolesAsync(user);
+        var role = roles.FirstOrDefault() ?? AppRoles.User;
+
+        var token = _tokenService.GenerateToken(user.Id, user.Email!, role);
         return new AuthResponse(user.Id.ToString(), user.Email!, token);
     }
 

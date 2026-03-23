@@ -9,7 +9,7 @@ Content-Type: application/json
 {
   "email": "john@example.com",
   "password": "Password123!",
-  "captchaToken": "your-captcha-token"
+  "captchaToken": "captcha-token"
 }
 
 ### Login
@@ -18,9 +18,9 @@ POST {{baseUrl}}/api/auth/login
 Content-Type: application/json
 
 {
-  "email": "john@example.com",
-  "password": "Password123!",
-  "captchaToken": "your-captcha-token"
+  "email": "admin@delivery-system.com",
+  "password": "Admin@Str0ng!Pass",
+  "captchaToken": "captcha-token"
 }
 
 ### Login with Google
@@ -34,8 +34,8 @@ Content-Type: application/json
 
 ### ── Authenticated request  ─────────────────────────────────────
 
-@token = {{login.response.body.token}}
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlODY1ZTU1NS1kZTIyLTRmNjYtZjc5OC0wOGRlODkzMzNkZDEiLCJlbWFpbCI6ImFkbWluQGRlbGl2ZXJ5LXN5c3RlbS5jb20iLCJqdGkiOiIzMzM4MTEzMC1hMjRhLTQ0YTMtYTYzOS03YmNlNDJiOTEwODMiLCJodHRwOi8vc2NoZW1hcy5taWNyb3NvZnQuY29tL3dzLzIwMDgvMDYvaWRlbnRpdHkvY2xhaW1zL3JvbGUiOiJhZG1pbiIsImV4cCI6MTc3NDMxMjA3MywiaXNzIjoiRGVsaXZlcnlTeXN0ZW0iLCJhdWQiOiJEZWxpdmVyeVN5c3RlbSJ9.N-S0wEXsnN0NrZniGXVArBDt4QsUyP07DGWTojizwnc
 
 ### Protected endpoint
-GET {{baseUrl}}/api/example
+GET {{baseUrl}}/api/products
 Authorization: Bearer {{token}}

@@ -2,10 +2,12 @@ using DeliverySystem.Application.Interfaces;
 using DeliverySystem.Application.Options;
 using DeliverySystem.Infrastructure.Data;
 using DeliverySystem.Infrastructure.Services;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
 namespace DeliverySystem.Infrastructure;
@@ -21,8 +23,9 @@ public static class DependencyInjection
     /// </summary>
     /// <param name="services">The service collection to configure.</param>
     /// <param name="configuration">The application configuration for reading connection strings.</param>
+    /// <param name="environment">The hosting environment.</param>
     /// <returns>The same <see cref="IServiceCollection"/> for chaining.</returns>
-    public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration, IWebHostEnvironment environment)
     {
         services
             .AddOptions<DatabaseOptions>()
@@ -50,10 +53,11 @@ public static class DependencyInjection
 
         services.AddSingleton<ITokenService, TokenService>();
         services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<DatabaseSeeder>();
 
         services
-            .AddOptions<GoogleOptions>()
-            .BindConfiguration(GoogleOptions.SectionName)
+            .AddOptions<AdminSeedOptions>()
+            .BindConfiguration(AdminSeedOptions.SectionName)
             .ValidateDataAnnotations()
             .ValidateOnStart();
 

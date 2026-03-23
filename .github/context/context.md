@@ -391,9 +391,9 @@ Status: Accepted
 - The API will be consumed by a frontend (SPA) running on a different origin (`http://localhost:5173` in development). Browsers block cross-origin requests without proper CORS headers.
 
 ### Decision
-- Created `CorsOptions` in **Application** with `AllowedOrigins` and `AllowedMethods` arrays (`[Required]`), bound to the `Cors` config section.
+- Created `CorsOptions` in **Application** with `AuthAllowedOrigins` and `AuthAllowedMethods` arrays (`[Required]`), bound to the `Cors` config section.
 - Registered a named CORS policy (`AuthCorsPolicy`) in `Program.cs` using the typed config values.
-- Applied `[EnableCors(CorsOptions.PolicyName)]` on `AuthController`. `AllowAnyHeader()` is permitted; origins and methods are restricted.
+- Applied `[EnableCors(CorsOptions.AuthPolicyName)]` on `AuthController`. `AllowAnyHeader()` is permitted; origins and methods are restricted.
 - Pipeline order: `ExceptionHandlingMiddleware` → `RateLimiter` → `CORS` → `Authentication` → `Authorization` → `MapControllers`.
 
 ### Alternatives Considered
@@ -412,7 +412,7 @@ Status: Accepted
 
 ### Implementation Notes
 - Key files: `Application/Options/CorsOptions.cs`, `Presentation/Program.cs`, `Presentation/Controllers/AuthController.cs`.
-- Config: `appsettings.json` → `Cors:AllowedOrigins`, `Cors:AllowedMethods`.
+- Config: `appsettings.json` → `Cors:AuthAllowedOrigins`, `Cors:AuthAllowedMethods`.
 
 - [ ] Tighten `AllowAnyHeader()` to specific headers in production
 - [ ] Add staging/production origins to config

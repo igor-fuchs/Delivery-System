@@ -12,13 +12,13 @@ public sealed class CorsOptions
     public const string SectionName = "Cors";
 
     /// <summary>Name of the registered CORS policy applied in the middleware pipeline.</summary>
-    public const string PolicyName = "AuthCorsPolicy";
+    public const string AuthPolicyName = "AuthCorsPolicy";
 
     /// <summary>Gets the list of origins permitted to make cross-origin requests.</summary>
     [Required]
-    public required string[] AllowedOrigins { get; init; }
+    public required string[] AuthAllowedOrigins { get; init; }
 
     /// <summary>Gets the list of HTTP methods allowed in cross-origin requests.</summary>
     [Required]
-    public required string[] AllowedMethods { get; init; }
+    public required string[] AuthAllowedMethods { get; init; }
 }
