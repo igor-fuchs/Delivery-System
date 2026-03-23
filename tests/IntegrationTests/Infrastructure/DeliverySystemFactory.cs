@@ -1,6 +1,8 @@
 using DeliverySystem.Application.Interfaces;
+using DeliverySystem.Domain.Constants;
 using DeliverySystem.Infrastructure.Data;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
@@ -37,8 +39,8 @@ public sealed class DeliverySystemFactory : WebApplicationFactory<Program>, IAsy
         builder.UseSetting("Jwt:Issuer", "DeliverySystem.Tests");
         builder.UseSetting("Jwt:Audience", "DeliverySystem.Tests");
         builder.UseSetting("Jwt:ExpirationMinutes", "60");
-        builder.UseSetting("Cors:AllowedOrigins:0", "http://localhost");
-        builder.UseSetting("Cors:AllowedMethods:0", "POST");
+        builder.UseSetting("Cors:AuthAllowedOrigins:0", "http://localhost");
+        builder.UseSetting("Cors:AuthAllowedMethods:0", "POST");
 
         // Rate limiting — UseSetting so values are available when AddAuthRateLimiter
         // reads configuration eagerly during Program.cs service registration.
@@ -60,6 +62,10 @@ public sealed class DeliverySystemFactory : WebApplicationFactory<Program>, IAsy
 
                 // Google
                 ["Google:WebClientId"] = "test-google-client-id",
+
+                // Admin Seed
+                ["AdminSeed:Email"] = "admin@test.com",
+                ["AdminSeed:Password"] = "Admin@Test1!",
             });
         });
 
@@ -108,6 +114,15 @@ public sealed class DeliverySystemFactory : WebApplicationFactory<Program>, IAsy
         using var scope = Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         await db.Database.EnsureCreatedAsync();
+
+        // Seed roles required by the application
+        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole<Guid>>>();
+        string[] roles = [AppRoles.Admin, AppRoles.User];
+        foreach (var role in roles)
+        {
+            if (!await roleManager.RoleExistsAsync(role))
+                await roleManager.CreateAsync(new IdentityRole<Guid> { Name = role });
+        }
     }
 
     /// <summary>

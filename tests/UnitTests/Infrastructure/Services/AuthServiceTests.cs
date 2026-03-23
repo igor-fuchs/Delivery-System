@@ -40,8 +40,14 @@ public sealed class AuthServiceTests
             .Returns(true);
 
         // Default: token generation returns a predictable value.
-        _tokenService.GenerateToken(Arg.Any<Guid>(), Arg.Any<string>())
+        _tokenService.GenerateToken(Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<string>())
             .Returns("jwt-token");
+
+        // Default: role operations succeed.
+        _userManager.AddToRoleAsync(Arg.Any<ApplicationUser>(), Arg.Any<string>())
+            .Returns(IdentityResult.Success);
+        _userManager.GetRolesAsync(Arg.Any<ApplicationUser>())
+            .Returns(["user"]);
 
         _sut = new AuthService(
             _userManager,

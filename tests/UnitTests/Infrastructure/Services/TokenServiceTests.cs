@@ -21,7 +21,7 @@ public sealed class TokenServiceTests
     [Fact]
     public void GenerateToken_ShouldReturnNonEmptyString()
     {
-        var token = _sut.GenerateToken(Guid.NewGuid(), "user@example.com");
+        var token = _sut.GenerateToken(Guid.NewGuid(), "user@example.com", "user");
 
         Assert.False(string.IsNullOrWhiteSpace(token));
     }
@@ -31,7 +31,7 @@ public sealed class TokenServiceTests
     {
         var userId = Guid.NewGuid();
 
-        var token = _sut.GenerateToken(userId, "user@example.com");
+        var token = _sut.GenerateToken(userId, "user@example.com", "user");
 
         var jwt = new JwtSecurityTokenHandler().ReadJwtToken(token);
         Assert.Equal(userId.ToString(), jwt.Claims.First(c => c.Type == JwtRegisteredClaimNames.Sub).Value);
@@ -42,7 +42,7 @@ public sealed class TokenServiceTests
     {
         const string email = "user@example.com";
 
-        var token = _sut.GenerateToken(Guid.NewGuid(), email);
+        var token = _sut.GenerateToken(Guid.NewGuid(), email, "user");
 
         var jwt = new JwtSecurityTokenHandler().ReadJwtToken(token);
         Assert.Equal(email, jwt.Claims.First(c => c.Type == JwtRegisteredClaimNames.Email).Value);
@@ -51,7 +51,7 @@ public sealed class TokenServiceTests
     [Fact]
     public void GenerateToken_ShouldContainJtiClaim()
     {
-        var token = _sut.GenerateToken(Guid.NewGuid(), "user@example.com");
+        var token = _sut.GenerateToken(Guid.NewGuid(), "user@example.com", "user");
 
         var jwt = new JwtSecurityTokenHandler().ReadJwtToken(token);
         var jti = jwt.Claims.First(c => c.Type == JwtRegisteredClaimNames.Jti).Value;
@@ -61,7 +61,7 @@ public sealed class TokenServiceTests
     [Fact]
     public void GenerateToken_ShouldSetCorrectIssuer()
     {
-        var token = _sut.GenerateToken(Guid.NewGuid(), "user@example.com");
+        var token = _sut.GenerateToken(Guid.NewGuid(), "user@example.com", "user");
 
         var jwt = new JwtSecurityTokenHandler().ReadJwtToken(token);
         Assert.Equal(DefaultOptions.Issuer, jwt.Issuer);
@@ -70,7 +70,7 @@ public sealed class TokenServiceTests
     [Fact]
     public void GenerateToken_ShouldSetCorrectAudience()
     {
-        var token = _sut.GenerateToken(Guid.NewGuid(), "user@example.com");
+        var token = _sut.GenerateToken(Guid.NewGuid(), "user@example.com", "user");
 
         var jwt = new JwtSecurityTokenHandler().ReadJwtToken(token);
         Assert.Contains(DefaultOptions.Audience, jwt.Audiences);
@@ -81,7 +81,7 @@ public sealed class TokenServiceTests
     {
         var beforeGenerate = DateTime.UtcNow;
 
-        var token = _sut.GenerateToken(Guid.NewGuid(), "user@example.com");
+        var token = _sut.GenerateToken(Guid.NewGuid(), "user@example.com", "user");
 
         var jwt = new JwtSecurityTokenHandler().ReadJwtToken(token);
         var expectedExpiry = beforeGenerate.AddMinutes(DefaultOptions.ExpirationMinutes);
@@ -93,8 +93,8 @@ public sealed class TokenServiceTests
     [Fact]
     public void GenerateToken_ShouldGenerateUniqueJtiPerCall()
     {
-        var token1 = _sut.GenerateToken(Guid.NewGuid(), "user@example.com");
-        var token2 = _sut.GenerateToken(Guid.NewGuid(), "user@example.com");
+        var token1 = _sut.GenerateToken(Guid.NewGuid(), "user@example.com", "user");
+        var token2 = _sut.GenerateToken(Guid.NewGuid(), "user@example.com", "user");
 
         var jwt1 = new JwtSecurityTokenHandler().ReadJwtToken(token1);
         var jwt2 = new JwtSecurityTokenHandler().ReadJwtToken(token2);
