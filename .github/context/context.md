@@ -495,3 +495,257 @@ Status: Accepted
 
 - [ ] Add `appsettings.Development.json.example` as a committed template
 - [ ] Document local setup steps in README.md
+
+---
+
+## Decision: CI/CD with GitHub Actions
+Date: 2026-03-22
+Status: Accepted
+
+### Context
+- The project had no automated build, test, or deployment pipeline. Manual deployments are error-prone and lack consistency.
+- The team uses GitHub, so GitHub Actions is the natural choice for CI/CD.
+- A container image needs to be published to a registry for deployment.
+
+### Decision
+- Created **CI workflow** (`.github/workflows/ci.yml`) triggered on `pull_request` to `main`/`develop` and `workflow_dispatch`. Steps: checkout → setup .NET 10.0 SDK → restore → build (Release) → run tests → upload `.trx` test results as artifact (7-day retention).
+- Created **CD workflow** (`.github/workflows/cd.yml`) triggered on `workflow_dispatch` only, gated to `main` branch. Steps: checkout → login to GHCR → extract Docker metadata (SHA tag + `latest`) → build and push image using `docker/Dockerfile.prod`.
+- Created **production Dockerfile** (`docker/Dockerfile.prod`) as a multi-stage build: (1) `sdk:10.0` stage restores and publishes in Release mode, (2) `aspnet:10.0` runtime stage copies publish output, runs as non-root `appuser` on port 8080.
+- CI and CD are intentionally separate workflows — CI runs automatically on PRs, CD is manual-only for controlled releases.
+
+### Alternatives Considered
+- **Single workflow with conditional jobs**: Simpler but couples testing and deployment triggers. Separate workflows give independent control.
+- **Azure DevOps Pipelines**: Viable but adds tool fragmentation since the repo is on GitHub.
+- **Docker Hub**: GHCR integrates natively with `GITHUB_TOKEN` — no extra credentials needed.
+
+### Consequences
+- **Positive**: Every PR is validated automatically; container images are versioned by commit SHA; non-root container follows security best practices.
+- **Negative**: CD requires manual dispatch — no auto-deploy on merge to `main`. Acceptable for current maturity; can add auto-trigger later.
+- **Risk**: `Dockerfile.prod` must stay in sync with solution structure changes. Central Package Management files (`Directory.Build.props`, `Directory.Packages.props`) must be copied before restore.
+
+### Validation Plan
+- CI: Open a PR → workflow runs → build + tests pass → `.trx` artifact available.
+- CD: Manual dispatch from `main` → image published to `ghcr.io/<owner>/delivery-system:latest`.
+- Rollback: Delete the workflow files; no infrastructure changes.
+
+### Implementation Notes
+- Key files: `.github/workflows/ci.yml`, `.github/workflows/cd.yml`, `docker/Dockerfile.prod`.
+- `Dockerfile.prod` copies `.csproj` files individually for layer caching, then copies `src/` for the build.
+- Non-root user (`appuser`, UID 1001) in production image.
+
+- [ ] Add auto-trigger for CD on merge to `main` when ready
+- [ ] Add build caching (`actions/cache`) for faster CI runs
+- [ ] Add deployment step (SSH, Kubernetes, or cloud provider) to CD workflow
+
+---
+
+## Decision: Docker file reorganization into `docker/` folder
+Date: 2026-03-22
+Status: Accepted
+
+### Context
+- Docker-related files (`Dockerfile`, `Dockerfile.prod`) were at the repository root, cluttering it alongside solution files, configs, and source directories.
+- The project also has a `.devcontainer/devcontainer.json` that references the Docker Compose file.
+
+### Decision
+- Moved `Dockerfile` and `Dockerfile.prod` into a `docker/` directory at the repository root.
+- `docker-compose.yml` remains at the root (Docker Compose convention and simpler `docker compose up`).
+- Updated all references: `.devcontainer/devcontainer.json`, `.github/workflows/cd.yml` (`file: docker/Dockerfile.prod`), `.dockerignore`, and documentation.
+- `docker/Dockerfile` (development) uses `CMD` with `dotnet restore` + `dotnet watch run` targeting `src/Presentation/Presentation.csproj`.
+- Build context in `docker-compose.yml` is `.` (root), with `dockerfile: docker/Dockerfile` to pick up the relocated file.
+
+### Alternatives Considered
+- **Keep at root**: Simpler but adds visual noise. `docker/` folder is a common convention.
+- **Move `docker-compose.yml` into `docker/` too**: Requires `docker compose -f docker/docker-compose.yml` everywhere. Leaving it at root is more ergonomic.
+
+### Consequences
+- **Positive**: Cleaner root directory; Docker files co-located; easy to find all container config in one folder.
+- **Negative**: Every Docker reference (CI/CD, devcontainer, scripts) must use `docker/` prefix — already updated.
+- **Risk**: New Dockerfiles or compose overrides must go in `docker/` to maintain consistency.
+
+### Validation Plan
+- `docker compose up --build` from root succeeds.
+- CD workflow references `file: docker/Dockerfile.prod` correctly.
+- DevContainer reopens successfully.
+
+### Implementation Notes
+- Key files: `docker/Dockerfile`, `docker/Dockerfile.prod`, `docker-compose.yml`, `.devcontainer/devcontainer.json`, `.github/workflows/cd.yml`.
+
+- [ ] Update README with `docker/` folder documentation
+
+---
+
+## Decision: E2E integration tests with WebApplicationFactory and SQLite
+Date: 2026-03-22
+Status: Accepted
+
+### Context
+- The project had unit tests but no end-to-end integration tests verifying the full HTTP pipeline (routing → middleware → controller → service → database).
+- Integration tests need to be fast, isolated, and runnable in CI without external dependencies (no SQL Server container).
+
+### Decision
+- Created `tests/IntegrationTests` project with `Microsoft.AspNetCore.Mvc.Testing` and `Microsoft.EntityFrameworkCore.Sqlite`.
+- Created `DeliverySystemFactory` extending `WebApplicationFactory<Program>` with:
+  - **SQLite in-memory** replacing SQL Server — a single `SqliteConnection` kept open for the test lifetime, ensuring the in-memory database persists across requests.
+  - **EF Core dual-provider conflict resolution** — all `ApplicationDbContext` and `DbContextOptions` registrations are removed before re-registering with SQLite, preventing EF Core's internal service provider from seeing both SQL Server and SQLite providers.
+  - **FakeCaptchaService** (test-specific, controllable) replacing the real/fake CAPTCHA, allowing tests to toggle pass/fail behavior.
+  - **`UseSetting`** for JWT, CORS, and RateLimit config — these values are consumed eagerly by `Program.cs` during service registration, before `ConfigureAppConfiguration` callbacks run. `UseSetting` injects them early enough.
+  - **Elevated rate limits** (10,000 requests/minute) to prevent 429 responses during test runs.
+  - **Role seeding** in `InitializeAsync` — creates `user` and `admin` Identity roles before tests run.
+- Created `IntegrationTestBase` for shared setup (HttpClient, JSON helpers, helper methods).
+- Created test classes: `RegisterEndpointTests`, `LoginEndpointTests`, `GoogleLoginEndpointTests` covering success paths, validation errors, conflict, invalid credentials, and CAPTCHA failures.
+- Environment set to `"Testing"` via `UseEnvironment` to avoid Development-specific code paths (auto-migration, seeder).
+
+### Alternatives Considered
+- **SQL Server in Docker for tests**: More realistic but slow to spin up, complex CI setup, and flaky. SQLite in-memory is fast and deterministic.
+- **Testcontainers**: Good for SQL Server integration but adds NuGet dependency and CI Docker-in-Docker complexity. Overkill for current needs.
+- **In-memory EF Core provider**: Doesn't support relational features (constraints, transactions). SQLite is a better relational approximation.
+- **ConfigureAppConfiguration for JWT/CORS/RateLimit**: Runs too late — `Program.cs` reads these eagerly. `UseSetting` is the correct mechanism for early config injection.
+
+### Consequences
+- **Positive**: Full pipeline coverage; fast (~seconds); no external dependencies; CI-friendly; controllable CAPTCHA for negative tests.
+- **Negative**: SQLite doesn't match SQL Server identity behavior exactly (e.g., sequences, collation). Mitigated by testing business logic, not EF provider specifics.
+- **Risk**: If `Program.cs` adds new eager config reads, they must use `UseSetting` in the factory. Documented in code comments.
+
+### Validation Plan
+- `dotnet test` runs all integration tests in CI alongside unit tests.
+- All auth endpoints covered: register (success, validation, conflict, CAPTCHA), login (success, invalid, CAPTCHA), Google login (malformed JWT, CAPTCHA).
+- Rollback: Delete `tests/IntegrationTests/` and remove from solution.
+
+### Implementation Notes
+- Key files: `tests/IntegrationTests/IntegrationTests.csproj`, `tests/IntegrationTests/Infrastructure/DeliverySystemFactory.cs`, `tests/IntegrationTests/Infrastructure/FakeCaptchaService.cs`, `tests/IntegrationTests/Infrastructure/IntegrationTestCollection.cs`, `tests/IntegrationTests/IntegrationTestBase.cs`, `tests/IntegrationTests/Auth/*.cs`.
+- Architecture: Factory and test infrastructure in `Infrastructure/`, test classes organized by feature (`Auth/`).
+- `FakeCaptchaService` in tests is separate from `Infrastructure/Services/FakeCaptchaService` — the test version has a controllable `ShouldPass` property.
+
+- [ ] Add integration tests for authorized endpoints (once they exist)
+- [ ] Add integration test for rate limiting (429) behavior
+- [ ] Consider adding `TestContainers` for SQL Server-specific edge cases in a separate test suite
+
+---
+
+## Decision: ServiceUnavailableException (HTTP 503)
+Date: 2026-03-22
+Status: Accepted
+
+### Context
+- When `AuthService` calls Google's token validation endpoint and receives an `HttpRequestException` (network failure, DNS resolution, timeout), the error was propagated as an unhandled exception, resulting in a generic HTTP 500.
+- Clients need to distinguish between server errors (500) and external service unavailability (503) for retry logic.
+
+### Decision
+- Created `ServiceUnavailableException` in **Application/Exceptions** (same layer as `ConflictException`, `ValidationException`) — a typed exception that signals an external dependency is unreachable.
+- Registered the mapping `ServiceUnavailableException → HttpStatusCode.ServiceUnavailable (503)` in `ExceptionHandlingMiddleware` in **Presentation**.
+- In `AuthService.GoogleLoginAsync`, `HttpRequestException` is caught and rethrown as `ServiceUnavailableException` with a descriptive message. `InvalidJwtException` remains mapped to `UnauthorizedAccessException` (401).
+
+### Alternatives Considered
+- **Return 500 for all external failures**: Simpler but clients cannot implement targeted retry strategies.
+- **Circuit breaker (Polly)**: Would prevent cascading failures but adds complexity. Can be layered on top later.
+- **Custom `ProblemDetails` without exception**: Would skip the middleware pattern. Consistency with existing exception-based flow is preferred.
+
+### Consequences
+- **Positive**: Clients can distinguish 503 (retry later) from 500 (server bug); consistent with the existing exception → status code mapping pattern.
+- **Negative**: Only covers Google token validation for now. Other external calls (reCAPTCHA) should adopt the same pattern.
+- **Risk**: If `ServiceUnavailableException` is thrown for transient errors, clients may retry aggressively. Consider adding `Retry-After` header in the future.
+
+### Validation Plan
+- Unit test: `GoogleLoginAsync` with `HttpRequestException` → catches `ServiceUnavailableException`.
+- Integration test: Malformed Google token → 503 (when Google endpoint is unreachable).
+- Rollback: Remove exception class and middleware mapping; revert `AuthService` catch.
+
+### Implementation Notes
+- Key files: `Application/Exceptions/ServiceUnavailableException.cs`, `Presentation/Middlewares/ExceptionHandlingMiddleware.cs`, `Infrastructure/Services/AuthService.cs`.
+
+- [ ] Apply `ServiceUnavailableException` pattern to reCAPTCHA HTTP failures
+- [ ] Consider adding `Retry-After` header to 503 responses
+- [ ] Evaluate Polly circuit breaker for Google API calls
+
+---
+
+## Decision: Role-based authorization with admin seed user
+Date: 2026-03-22
+Status: Accepted
+
+### Context
+- All authenticated users had the same access level. The system needs at least two roles: `user` (customers) and `admin` (providers/operators).
+- An initial admin user must exist to bootstrap the system without manual database manipulation.
+- JWT tokens must carry role information for authorization decisions.
+
+### Decision
+- Created `AppRoles` constants in **Domain/Constants** — `User = "user"`, `Admin = "admin"`, `DefaultPolicy = "DefaultPolicy"`. Lives in Domain because roles are a core business concept.
+- Created `AdminSeedOptions` in **Application/Options** — `Email` and `Password` bound to `AdminSeed` config section with `[Required]` validation. Values come from environment variables (`AdminSeed__Email`, `AdminSeed__Password`), never committed.
+- Created `DatabaseSeeder` in **Infrastructure/Services** — seeds both Identity roles and the admin user on startup. Idempotent: checks existence before creating. Logs all seed operations.
+- Updated `ITokenService.GenerateToken` to accept a `role` parameter (3 args: `userId`, `email`, `role`). `TokenService` includes `ClaimTypes.Role` in JWT claims.
+- Updated `AuthService`:
+  - `RegisterAsync`: assigns `AppRoles.User` role via `UserManager.AddToRoleAsync`.
+  - `LoginAsync`: fetches user roles via `GetRolesAsync`, passes first role to `GenerateToken`.
+  - `GoogleLoginAsync`: assigns `AppRoles.User` on auto-registration, fetches role on subsequent logins.
+- Registered `DefaultPolicy` in `Program.cs` via `AddAuthorization` — requires either `Admin` or `User` role. Controllers can apply `[Authorize(Policy = AppRoles.DefaultPolicy)]`.
+- `DatabaseSeeder.SeedAsync()` is called in the Development block of `Program.cs` after migrations.
+- Updated `DependencyInjection.cs` to register `DatabaseSeeder` (scoped) and `AdminSeedOptions`.
+
+### Alternatives Considered
+- **Claims-based without Identity roles**: Flexible but reinvents role management. Identity roles integrate with `[Authorize(Roles = ...)]` natively.
+- **Seed via SQL migration**: Fragile if password hashing algorithm changes. Using `UserManager` ensures consistent password hashing.
+- **Seed in all environments**: Risky in production. Current implementation seeds only in Development. Production admin creation should be a separate process.
+
+### Consequences
+- **Positive**: Authorization is role-aware; admin bootstrap is automated; JWT carries role claims; `[Authorize(Policy)]` works out of the box.
+- **Negative**: Only one role per user is passed to the token (first role from `GetRolesAsync`). Multi-role tokens can be added later.
+- **Risk**: `DatabaseSeeder` runs only in Development. Production needs a separate admin provisioning strategy (migration script, CLI tool, or admin API).
+
+### Validation Plan
+- Runtime: Start app → roles `user` and `admin` created → admin user exists → login with admin credentials returns JWT with `role: admin`.
+- Unit tests: Updated all `GenerateToken` mock setups to 3-parameter signature. `AuthServiceTests` verify `AddToRoleAsync` and `GetRolesAsync` calls.
+- Integration tests: Role seeding in `DeliverySystemFactory.InitializeAsync` ensures roles exist for all test scenarios.
+- Rollback: Remove `AppRoles`, `AdminSeedOptions`, `DatabaseSeeder`, revert `ITokenService` to 2-param, remove `AddAuthorization` policy.
+
+### Implementation Notes
+- Key files: `Domain/Constants/AppRoles.cs`, `Application/Options/AdminSeedOptions.cs`, `Infrastructure/Services/DatabaseSeeder.cs`, `Infrastructure/Services/TokenService.cs`, `Infrastructure/Services/AuthService.cs`, `Infrastructure/DependencyInjection.cs`, `Presentation/Program.cs`.
+- Config: `AdminSeed__Email` and `AdminSeed__Password` in `.env` / `.env.example` / `docker-compose.yml`.
+
+- [ ] Support multi-role tokens (array of roles in JWT claims)
+- [ ] Create production admin provisioning strategy (CLI tool or protected endpoint)
+- [ ] Add `[Authorize(Policy = AppRoles.DefaultPolicy)]` to protected endpoints as they are created
+- [ ] Add admin-only endpoints with `[Authorize(Roles = AppRoles.Admin)]`
+
+---
+
+## Decision: FakeCaptchaService for Development environment
+Date: 2026-03-22
+Status: Accepted
+
+### Context
+- Running the API in Development mode required valid reCAPTCHA tokens for every register/login request, making local development and manual testing cumbersome.
+- The `RecaptchaOptions` with `[Required]` `SecretKey` also forced developers to configure a real reCAPTCHA key even for local work.
+
+### Decision
+- Created `FakeCaptchaService` in **Infrastructure/Services** implementing `ICaptchaService`. Always returns `true` and logs a debug message indicating CAPTCHA was bypassed.
+- Updated `DependencyInjection.AddInfrastructure` to accept `IWebHostEnvironment` (changed from `bool isDevelopment`). When `IsDevelopment()`:
+  - Registers `FakeCaptchaService` as singleton (no HTTP client needed).
+  - Skips `RecaptchaOptions` binding and validation (no `SecretKey` required).
+- When not Development:
+  - Registers `RecaptchaService` via `AddHttpClient` with the real Google endpoint.
+  - Validates `RecaptchaOptions` on startup as before.
+- Updated `Program.cs` to pass `builder.Environment` to `AddInfrastructure`.
+
+### Alternatives Considered
+- **Environment variable toggle**: A `CAPTCHA_ENABLED=false` flag. More flexible but error-prone — could accidentally disable CAPTCHA in production.
+- **Always register real service with test key**: Still makes HTTP calls to Google, adding latency and requiring network access in development.
+- **No-op middleware that strips CAPTCHA before reaching service**: Adds middleware complexity. Service-level replacement is cleaner.
+
+### Consequences
+- **Positive**: Zero-friction local development; no reCAPTCHA key needed in Development; no external HTTP calls in dev; `RecaptchaOptions` validation only runs in non-Development environments.
+- **Negative**: Development and production code paths diverge — a bug in `RecaptchaService` won't surface locally.
+- **Risk**: If `IsDevelopment()` check is wrong (e.g., environment variable not set), `FakeCaptchaService` could run in production. Mitigated by `IWebHostEnvironment` coming from the framework, not manual config.
+
+### Validation Plan
+- Development: Start API → register without reCAPTCHA token → succeeds (logged as bypassed).
+- Production/Staging: Start API without `Recaptcha:SecretKey` → `OptionsValidationException` at startup.
+- Integration tests: Use their own `FakeCaptchaService` (controllable pass/fail), independent of the infrastructure fake.
+- Rollback: Revert `DependencyInjection.cs` to always register `RecaptchaService`.
+
+### Implementation Notes
+- Key files: `Infrastructure/Services/FakeCaptchaService.cs`, `Infrastructure/DependencyInjection.cs`, `Presentation/Program.cs`.
+- Note: Integration tests have a separate `FakeCaptchaService` in `tests/IntegrationTests/Infrastructure/` with a toggleable `ShouldPass` property for negative testing. The infrastructure fake always passes.
+
+- [ ] Add health check that verifies reCAPTCHA connectivity in production
+- [ ] Consider a `Staging` environment that also uses `FakeCaptchaService` for QA testing
