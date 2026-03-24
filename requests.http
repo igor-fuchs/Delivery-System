@@ -34,7 +34,7 @@ Content-Type: application/json
 
 ### ── Authenticated request  ─────────────────────────────────────
 
-@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlODY1ZTU1NS1kZTIyLTRmNjYtZjc5OC0wOGRlODkzMzNkZDEiLCJlbWFpbCI6ImFkbWluQGRlbGl2ZXJ5LXN5c3RlbS5jb20iLCJqdGkiOiIzMzM4MTEzMC1hMjRhLTQ0YTMtYTYzOS03YmNlNDJiOTEwODMiLCJodHRwOi8vc2NoZW1hcy5taWNyb3NvZnQuY29tL3dzLzIwMDgvMDYvaWRlbnRpdHkvY2xhaW1zL3JvbGUiOiJhZG1pbiIsImV4cCI6MTc3NDMxMjA3MywiaXNzIjoiRGVsaXZlcnlTeXN0ZW0iLCJhdWQiOiJEZWxpdmVyeVN5c3RlbSJ9.N-S0wEXsnN0NrZniGXVArBDt4QsUyP07DGWTojizwnc
+@token = {{login.response.body.token}}
 
 ### Protected endpoint
 GET {{baseUrl}}/api/products
