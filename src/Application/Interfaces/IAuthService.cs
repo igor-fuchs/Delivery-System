@@ -20,7 +20,8 @@ public interface IAuthService
     /// </summary>
     /// <param name="request">The login credentials.</param>
     /// <returns>An <see cref="AuthResponse"/> containing the user ID, email, and JWT token.</returns>
-    /// <exception cref="UnauthorizedAccessException">Thrown when the email is not found or the password is incorrect.</exception>
+    /// <exception cref="Exceptions.NotFoundException">Thrown when no account exists for the supplied email address.</exception>
+    /// <exception cref="UnauthorizedAccessException">Thrown when the password is incorrect or CAPTCHA verification fails.</exception>
     Task<AuthResponse> LoginAsync(LoginRequest request);
 
     /// <summary>

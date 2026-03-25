@@ -156,15 +156,15 @@ public sealed class AuthServiceTests
     }
 
     [Fact]
-    public async Task LoginAsync_UnknownEmail_ShouldThrowUnauthorizedAccessException()
+    public async Task LoginAsync_UnknownEmail_ShouldThrowNotFoundException()
     {
         var request = new LoginRequest("unknown@example.com", "any", "captcha");
 
         _userManager.FindByEmailAsync("unknown@example.com").ReturnsNull();
 
-        var ex = await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _sut.LoginAsync(request));
+        var ex = await Assert.ThrowsAsync<NotFoundException>(() => _sut.LoginAsync(request));
 
-        Assert.Equal("Invalid credentials.", ex.Message);
+        Assert.Contains("unknown@example.com", ex.Message);
     }
 
     [Fact]

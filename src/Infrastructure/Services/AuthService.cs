@@ -53,7 +53,7 @@ public sealed class AuthService : IAuthService
     {
         await ValidateCaptchaAsync(request.CaptchaToken);
 
-        var email = request.Email.Trim();
+        var email = request.Email.Trim().ToLowerInvariant();
 
         var existing = await _userManager.FindByEmailAsync(email);
         if (existing is not null)
@@ -83,23 +83,20 @@ public sealed class AuthService : IAuthService
     }
 
     /// <inheritdoc />
-    /// <exception cref="UnauthorizedAccessException">
-    /// Thrown when the email is not found, the password is incorrect, or CAPTCHA verification fails.
-    /// </exception>
+    /// <exception cref="NotFoundException">Thrown when no account exists for the supplied email address.</exception>
+    /// <exception cref="UnauthorizedAccessException">Thrown when the password is incorrect or CAPTCHA verification fails.</exception>
     public async Task<AuthResponse> LoginAsync(LoginRequest request)
     {
         await ValidateCaptchaAsync(request.CaptchaToken);
 
-        // Trim whitespace only — same rationale as RegisterAsync.
-        var email = request.Email.Trim();
+        // Trim whitespace and convert to lowercase — same rationale as RegisterAsync.
+        var email = request.Email.Trim().ToLowerInvariant();
 
         var user = await _userManager.FindByEmailAsync(email);
         if (user is null)
         {
-            // Use the same message for missing user and wrong password to avoid
-            // leaking whether an account exists (user enumeration prevention).
             _logger.LogWarning("Failed login attempt for unknown email {Email}", email);
-            throw new UnauthorizedAccessException("Invalid credentials.");
+            throw new NotFoundException($"No account found for '{email}'.");
         }
 
         var valid = await _userManager.CheckPasswordAsync(user, request.Password);
