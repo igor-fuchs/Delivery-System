@@ -26,6 +26,7 @@ public sealed class RegisterRequestValidator : AbstractValidator<RegisterRequest
             .Matches(@"[@$!%*?&]").WithMessage("Password must contain at least one special character.");
 
         RuleFor(x => x.CaptchaToken)
-            .NotEmpty().WithMessage("Captcha token is required.");
+            .NotEmpty().WithMessage("Captcha token is required.")
+            .MaximumLength(2000).WithMessage("Captcha token cannot exceed 2000 characters.");
     }
 }
