@@ -55,12 +55,14 @@ public sealed class AuthController : ControllerBase
     /// <returns>An <see cref="AuthResponse"/> with the user ID, email, and JWT token.</returns>
     /// <response code="200">Login successful.</response>
     /// <response code="400">Validation errors in the request.</response>
-    /// <response code="401">Invalid email or password.</response>
+    /// <response code="401">Invalid password or CAPTCHA failed.</response>
+    /// <response code="404">No account found for the supplied email address.</response>
     /// <response code="429">Too many requests. Rate limit exceeded.</response>
     [HttpPost("login")]
     [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
