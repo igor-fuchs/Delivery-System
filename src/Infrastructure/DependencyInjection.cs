@@ -10,6 +10,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
+using StackExchange.Redis;
 
 namespace DeliverySystem.Infrastructure;
 
@@ -52,9 +53,37 @@ public static class DependencyInjection
             .AddRoles<IdentityRole<Guid>>()
             .AddEntityFrameworkStores<ApplicationDbContext>();
 
+        // Redis
+        services
+            .AddOptions<RedisOptions>()
+            .BindConfiguration(RedisOptions.SectionName)
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        services.AddSingleton<IConnectionMultiplexer>(sp =>
+        {
+            var opts = sp.GetRequiredService<IOptions<RedisOptions>>().Value;
+            return ConnectionMultiplexer.Connect(opts.ConnectionString);
+        });
+
+        services.AddStackExchangeRedisCache(options =>
+        {
+            var redisOpts = configuration.GetSection(RedisOptions.SectionName).Get<RedisOptions>()!;
+            options.Configuration = redisOpts.ConnectionString;
+            options.InstanceName = redisOpts.InstanceName;
+        });
+
+        // Services
         services.AddSingleton<ITokenService, TokenService>();
         services.AddScoped<IAuthService, AuthService>();
-        services.AddScoped<IProductService, ProductService>();
+
+        services.AddScoped<ProductService>();
+        services.AddScoped<IProductService>(sp =>
+            new CachedProductService(
+                sp.GetRequiredService<ProductService>(),
+                sp.GetRequiredService<Microsoft.Extensions.Caching.Distributed.IDistributedCache>(),
+                sp.GetRequiredService<IOptions<RedisOptions>>()));
+
         services.AddScoped<IOrderService, OrderService>();
         services.AddScoped<DatabaseSeeder>();
 
