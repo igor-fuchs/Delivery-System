@@ -3,6 +3,7 @@ using DeliverySystem.Application.Options;
 using DeliverySystem.Infrastructure.Data;
 using DeliverySystem.Infrastructure.Identity;
 using DeliverySystem.Infrastructure.Services;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -53,25 +54,31 @@ public static class DependencyInjection
             .AddRoles<IdentityRole<Guid>>()
             .AddEntityFrameworkStores<ApplicationDbContext>();
 
-        // Redis
+        // Redis — abortConnect=false prevents startup failures when Redis is temporarily
+        // unavailable (e.g. during integration tests or delayed container startup).
         services
             .AddOptions<RedisOptions>()
             .BindConfiguration(RedisOptions.SectionName)
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
-        services.AddSingleton<IConnectionMultiplexer>(sp =>
-        {
-            var opts = sp.GetRequiredService<IOptions<RedisOptions>>().Value;
-            return ConnectionMultiplexer.Connect(opts.ConnectionString);
-        });
+        var redisOpts = configuration.GetSection(RedisOptions.SectionName).Get<RedisOptions>()!;
+        var redisConfig = ConfigurationOptions.Parse(redisOpts.ConnectionString);
+        redisConfig.AbortOnConnectFail = false;
+        var multiplexer = ConnectionMultiplexer.Connect(redisConfig);
+
+        services.AddSingleton<IConnectionMultiplexer>(multiplexer);
 
         services.AddStackExchangeRedisCache(options =>
         {
-            var redisOpts = configuration.GetSection(RedisOptions.SectionName).Get<RedisOptions>()!;
-            options.Configuration = redisOpts.ConnectionString;
+            options.ConnectionMultiplexerFactory = () => Task.FromResult<IConnectionMultiplexer>(multiplexer);
             options.InstanceName = redisOpts.InstanceName;
         });
+
+        // Persist Data Protection keys to Redis so they survive container restarts.
+        services.AddDataProtection()
+            .PersistKeysToStackExchangeRedis(multiplexer, "DataProtection-Keys")
+            .SetApplicationName("DeliverySystem");
 
         // Services
         services.AddSingleton<ITokenService, TokenService>();

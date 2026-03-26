@@ -16,7 +16,7 @@ namespace DeliverySystem.IntegrationTests.Infrastructure;
 /// <summary>
 /// Custom <see cref="WebApplicationFactory{TEntryPoint}"/> that replaces production services
 /// with test-friendly alternatives: SQLite in-memory database, fake CAPTCHA service,
-/// in-memory distributed cache, fake token blacklist, and elevated rate limits.
+/// in-memory distributed cache, and elevated rate limits.
 /// </summary>
 public sealed class DeliverySystemFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {

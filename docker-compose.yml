@@ -10,7 +10,7 @@ services:
       - /workspace/artifacts
     environment:
       ASPNETCORE_ENVIRONMENT: Development
-      ASPNETCORE_URLS: http://+:8080
+      ASPNETCORE_HTTP_PORTS: "8080"
       DOTNET_USE_POLLING_FILE_WATCHER: "true"
       Jwt__SecretKey: ${JWT__SECRET_KEY}
       Database__ConnectionString: ${DATABASE__CONNECTION_STRING}
