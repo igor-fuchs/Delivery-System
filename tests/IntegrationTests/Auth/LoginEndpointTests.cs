@@ -31,11 +31,11 @@ public sealed class LoginEndpointTests : IntegrationTestBase
     }
 
     [Fact]
-    public async Task Login_UnknownEmail_ReturnsUnauthorized()
+    public async Task Login_UnknownEmail_ReturnsNotFound()
     {
         var response = await LoginAsync($"unknown-{Guid.NewGuid()}@test.com", "P@ssw0rd!");
 
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
     [Fact]
