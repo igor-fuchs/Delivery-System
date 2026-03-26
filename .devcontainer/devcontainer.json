@@ -13,7 +13,9 @@
         "ms-dotnettools.csdevkit",
         "ms-dotnettools.csharp",
         "humao.rest-client",
+        "github.actions",
         "github.copilot",
+        "anthropic.claude",
         "ms-mssql.mssql"
       ]
     }
