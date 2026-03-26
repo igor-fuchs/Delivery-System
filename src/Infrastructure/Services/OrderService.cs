@@ -43,15 +43,14 @@ public sealed class OrderService : IOrderService
     /// <inheritdoc />
     public async Task<OrderResponse> GetByIdAsync(Guid id, Guid? requesterId = null, CancellationToken ct = default)
     {
-        if (requesterId.HasValue && id != requesterId.Value)
-            throw new UnauthorizedAccessException("You are not authorized to view this order.");
-
-        var query = _context.Orders
+        var order = await _context.Orders
             .AsNoTracking()
-            .Include(o => o.OrderItems).ThenInclude(oi => oi.Product);
-
-        var order = await query.FirstOrDefaultAsync(o => o.Id == id, ct)
+            .Include(o => o.OrderItems).ThenInclude(oi => oi.Product)
+            .FirstOrDefaultAsync(o => o.Id == id, ct)
             ?? throw new NotFoundException($"Order '{id}' was not found.");
+
+        if (requesterId.HasValue && order.CustomerId != requesterId.Value)
+            throw new UnauthorizedAccessException("You are not authorized to view this order.");
 
         return MapToResponse(order);
     }

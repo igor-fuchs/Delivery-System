@@ -1,6 +1,7 @@
 using DeliverySystem.Application.Interfaces;
 using DeliverySystem.Application.Options;
 using DeliverySystem.Infrastructure.Data;
+using DeliverySystem.Infrastructure.Identity;
 using DeliverySystem.Infrastructure.Services;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;

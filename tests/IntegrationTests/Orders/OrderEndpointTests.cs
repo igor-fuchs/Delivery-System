@@ -67,7 +67,7 @@ public sealed class OrderEndpointTests : IntegrationTestBase
     }
 
     [Fact]
-    public async Task Create_MissingProduct_ReturnsBadRequest()
+    public async Task Create_MissingProduct_ReturnsNotFound()
     {
         var userToken = await GetTokenAsync($"user-missing-{Guid.NewGuid()}@test.com", "P@ssw0rd!");
         var userClient = CreateAuthenticatedClient(userToken);
@@ -78,7 +78,7 @@ public sealed class OrderEndpointTests : IntegrationTestBase
             Items = new[] { new { ProductId = Guid.NewGuid(), Quantity = 1 } }
         });
 
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
     [Fact]

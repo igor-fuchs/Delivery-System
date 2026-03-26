@@ -2,6 +2,7 @@ using DeliverySystem.Application.DTOs;
 using DeliverySystem.Application.Exceptions;
 using DeliverySystem.Domain.Entities;
 using DeliverySystem.Infrastructure.Data;
+using DeliverySystem.Infrastructure.Identity;
 using DeliverySystem.Infrastructure.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Data.Sqlite;
