@@ -1,8 +1,7 @@
 using DeliverySystem.Application.Interfaces;
-using DeliverySystem.Domain.Constants;
 using DeliverySystem.Infrastructure.Data;
+using DeliverySystem.Infrastructure.Services;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
@@ -103,26 +102,20 @@ public sealed class DeliverySystemFactory : WebApplicationFactory<Program>, IAsy
     }
 
     /// <summary>
-    /// Opens the SQLite connection and creates the database schema before any test runs.
+    /// Opens the SQLite connection, creates the database schema, and seeds roles and admin user before any test runs.
     /// </summary>
     public async Task InitializeAsync()
     {
         _connection = new SqliteConnection("Data Source=:memory:");
         await _connection.OpenAsync();
 
-        // Build a temporary service provider to run EnsureCreated
         using var scope = Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         await db.Database.EnsureCreatedAsync();
 
-        // Seed roles required by the application
-        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole<Guid>>>();
-        string[] roles = [AppRoles.Admin, AppRoles.User];
-        foreach (var role in roles)
-        {
-            if (!await roleManager.RoleExistsAsync(role))
-                await roleManager.CreateAsync(new IdentityRole<Guid> { Name = role });
-        }
+        // Seed roles and admin user using the same seeder as production.
+        var seeder = scope.ServiceProvider.GetRequiredService<DatabaseSeeder>();
+        await seeder.SeedAsync();
     }
 
     /// <summary>

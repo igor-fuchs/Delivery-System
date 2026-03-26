@@ -1,3 +1,4 @@
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using DeliverySystem.IntegrationTests.Infrastructure;
 
@@ -55,6 +56,50 @@ public abstract class IntegrationTestBase : IAsyncLifetime
     }
 
     /// <summary>
+    /// Registers a new user and returns a JWT token. Throws if registration fails.
+    /// </summary>
+    /// <param name="email">The email to register.</param>
+    /// <param name="password">The password to register.</param>
+    /// <returns>The JWT bearer token.</returns>
+    protected async Task<string> GetTokenAsync(string email, string password)
+    {
+        var response = await RegisterAsync(email, password);
+        if (!response.IsSuccessStatusCode)
+        {
+            // User may already exist — try logging in instead.
+            response = await LoginAsync(email, password);
+        }
+        var body = await response.Content.ReadFromJsonAsync<AuthResponseDto>();
+        return body!.Token!;
+    }
+
+    /// <summary>
+    /// Returns the seeded admin JWT token.
+    /// </summary>
+    protected async Task<string> GetAdminTokenAsync()
+        => await GetTokenForExistingUserAsync("admin@test.com", "Admin@Test1!");
+
+    /// <summary>
+    /// Logs in an existing user and returns their JWT token.
+    /// </summary>
+    private async Task<string> GetTokenForExistingUserAsync(string email, string password)
+    {
+        var response = await LoginAsync(email, password);
+        var body = await response.Content.ReadFromJsonAsync<AuthResponseDto>();
+        return body!.Token!;
+    }
+
+    /// <summary>
+    /// Creates a new <see cref="HttpClient"/> with the given bearer token pre-set.
+    /// </summary>
+    protected HttpClient CreateAuthenticatedClient(string token)
+    {
+        var client = Factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return client;
+    }
+
+    /// <summary>
     /// Resets the fake CAPTCHA service to always pass before each test.
     /// </summary>
     public Task InitializeAsync()
@@ -65,4 +110,6 @@ public abstract class IntegrationTestBase : IAsyncLifetime
 
     /// <inheritdoc />
     public Task DisposeAsync() => Task.CompletedTask;
+
+    private sealed record AuthResponseDto(string? Id, string? Email, string? Token);
 }
