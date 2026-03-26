@@ -1,5 +1,4 @@
 using DeliverySystem.Application.DTOs;
-using DeliverySystem.Application.Interfaces;
 using FluentValidation;
 
 namespace DeliverySystem.Application.Validators;
@@ -13,8 +12,7 @@ public sealed class CreateOrderRequestValidator : AbstractValidator<CreateOrderR
     /// <summary>
     /// Initializes a new instance of the <see cref="CreateOrderRequestValidator"/> class.
     /// </summary>
-    /// <param name="productService">The product service used to verify product existence.</param>
-    public CreateOrderRequestValidator(IProductService productService)
+    public CreateOrderRequestValidator()
     {
         RuleFor(x => x.Description)
             .NotEmpty().WithMessage("Description is required.")
@@ -31,11 +29,6 @@ public sealed class CreateOrderRequestValidator : AbstractValidator<CreateOrderR
             item.RuleFor(i => i.Quantity)
                 .GreaterThan(0).WithMessage("Quantity must be greater than zero.")
                 .LessThan(1000).WithMessage("Quantity must be less than 1000.");
-
-            item.RuleFor(i => i.ProductId)
-                .MustAsync(async (id, ct) => id != Guid.Empty && await productService.ExistsAsync(id, ct))
-                .WithMessage("The specified product was not found.")
-                .When(i => i.ProductId != Guid.Empty);
         });
     }
 }
