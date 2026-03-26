@@ -1,8 +1,10 @@
 using DeliverySystem.Application.DTOs;
 using DeliverySystem.Application.Interfaces;
+using DeliverySystem.Application.Options;
 using DeliverySystem.Domain.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace DeliverySystem.Presentation.Controllers;
 
@@ -12,6 +14,7 @@ namespace DeliverySystem.Presentation.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
+[EnableRateLimiting(RateLimitOptions.ProductsPolicyName)]
 public sealed class ProductsController : ControllerBase
 {
     private readonly IProductService _productService;

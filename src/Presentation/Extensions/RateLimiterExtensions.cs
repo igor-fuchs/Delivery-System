@@ -46,6 +46,21 @@ public static class RateLimiterExtensions
                 limiter.QueueLimit = 0;
             });
 
+            // Named policy applied to product endpoints — per-IP, more restrictive than the
+            // global limiter to protect the product catalog from excessive polling.
+            options.AddPolicy(RateLimitOptions.ProductsPolicyName, context =>
+                RateLimitPartition.GetFixedWindowLimiter(
+                    partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                    factory: _ => new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = opts.ProductsPermitLimit,
+                        Window = TimeSpan.FromMinutes(opts.ProductsWindowMinutes),
+                        QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                        QueueLimit = 0
+                    }
+                )
+            );
+
             // Global IP-based limiter applied to every request
             options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(_ =>
                 RateLimitPartition.GetFixedWindowLimiter(
