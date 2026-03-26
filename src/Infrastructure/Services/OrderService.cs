@@ -1,3 +1,4 @@
+using DeliverySystem.Application.Constants;
 using DeliverySystem.Application.DTOs;
 using DeliverySystem.Application.Exceptions;
 using DeliverySystem.Application.Interfaces;
@@ -47,10 +48,10 @@ public sealed class OrderService : IOrderService
             .AsNoTracking()
             .Include(o => o.OrderItems).ThenInclude(oi => oi.Product)
             .FirstOrDefaultAsync(o => o.Id == id, ct)
-            ?? throw new NotFoundException($"Order '{id}' was not found.");
+            ?? throw new NotFoundException($"Order '{id}' was not found.", ErrorCodes.OrderNotFound);
 
         if (requesterId.HasValue && order.CustomerId != requesterId.Value)
-            throw new UnauthorizedAccessException("You are not authorized to view this order.");
+            throw new AppUnauthorizedException("You are not authorized to view this order.", ErrorCodes.OrderAccessDenied);
 
         return MapToResponse(order);
     }
@@ -85,7 +86,7 @@ public sealed class OrderService : IOrderService
         var order = await _context.Orders
             .Include(o => o.OrderItems).ThenInclude(oi => oi.Product)
             .FirstOrDefaultAsync(o => o.Id == id, ct)
-            ?? throw new NotFoundException($"Order '{id}' was not found.");
+            ?? throw new NotFoundException($"Order '{id}' was not found.", ErrorCodes.OrderNotFound);
 
         order.Status = Enum.Parse<OrderStatus>(request.Status, ignoreCase: true);
         order.UpdatedAt = DateTime.UtcNow;
@@ -99,7 +100,7 @@ public sealed class OrderService : IOrderService
     public async Task DeleteAsync(Guid id, CancellationToken ct = default)
     {
         var order = await _context.Orders.FindAsync([id], ct)
-            ?? throw new NotFoundException($"Order '{id}' was not found.");
+            ?? throw new NotFoundException($"Order '{id}' was not found.", ErrorCodes.OrderNotFound);
 
         _context.Orders.Remove(order);
         await _context.SaveChangesAsync(ct);
@@ -116,14 +117,14 @@ public sealed class OrderService : IOrderService
 
         var missingId = productIds.FirstOrDefault(id => products.All(p => p.Id != id));
         if (missingId != default)
-            throw new NotFoundException($"Product '{missingId}' was not found.");
+            throw new NotFoundException($"Product '{missingId}' was not found.", ErrorCodes.ProductNotFound);
 
         var unavailable = products.FirstOrDefault(p => !p.Stock);
         if (unavailable is not null)
         {
-            throw new ValidationException(new Dictionary<string, string[]>
+            throw new ValidationException(new Dictionary<string, ValidationFieldError[]>
             {
-                ["items"] = [$"Product '{unavailable.Name}' is currently unavailable."]
+                ["items"] = [new ValidationFieldError(ErrorCodes.ProductUnavailable, $"Product '{unavailable.Name}' is currently unavailable.")]
             });
         }
 
