@@ -53,6 +53,8 @@ public static class DependencyInjection
 
         services.AddSingleton<ITokenService, TokenService>();
         services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<IProductService, ProductService>();
+        services.AddScoped<IOrderService, OrderService>();
         services.AddScoped<DatabaseSeeder>();
 
         services
