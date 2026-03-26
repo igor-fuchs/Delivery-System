@@ -1,5 +1,7 @@
 using System.Security.Claims;
+using DeliverySystem.Application.Constants;
 using DeliverySystem.Application.DTOs;
+using DeliverySystem.Application.Exceptions;
 using DeliverySystem.Application.Interfaces;
 using DeliverySystem.Domain.Constants;
 using Microsoft.AspNetCore.Authorization;
@@ -138,7 +140,7 @@ public sealed class OrdersController : ControllerBase
     private Guid GetCurrentUserId()
     {
         var value = User.FindFirstValue(ClaimTypes.NameIdentifier)
-            ?? throw new UnauthorizedAccessException("User identity could not be determined.");
+            ?? throw new AppUnauthorizedException("User identity could not be determined.", ErrorCodes.UserIdentityMissing);
         return Guid.Parse(value);
     }
 }

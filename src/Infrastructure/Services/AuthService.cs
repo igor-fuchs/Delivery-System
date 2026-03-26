@@ -1,3 +1,4 @@
+using DeliverySystem.Application.Constants;
 using DeliverySystem.Application.DTOs;
 using DeliverySystem.Application.Exceptions;
 using DeliverySystem.Application.Interfaces;
@@ -48,7 +49,7 @@ public sealed class AuthService : IAuthService
 
     /// <inheritdoc />
     /// <exception cref="ConflictException">Thrown when a user with the same email already exists.</exception>
-    /// <exception cref="UnauthorizedAccessException">Thrown when CAPTCHA verification fails.</exception>
+    /// <exception cref="AppUnauthorizedException">Thrown when CAPTCHA verification fails.</exception>
     public async Task<AuthResponse> RegisterAsync(RegisterRequest request)
     {
         await ValidateCaptchaAsync(request.CaptchaToken);
@@ -59,7 +60,7 @@ public sealed class AuthService : IAuthService
         if (existing is not null)
         {
             _logger.LogWarning("Registration attempt with duplicate email");
-            throw new ConflictException("User already exists.");
+            throw new ConflictException("User already exists.", ErrorCodes.UserAlreadyExists);
         }
 
         var user = new ApplicationUser
@@ -84,7 +85,7 @@ public sealed class AuthService : IAuthService
 
     /// <inheritdoc />
     /// <exception cref="NotFoundException">Thrown when no account exists for the supplied email address.</exception>
-    /// <exception cref="UnauthorizedAccessException">Thrown when the password is incorrect or CAPTCHA verification fails.</exception>
+    /// <exception cref="AppUnauthorizedException">Thrown when the password is incorrect or CAPTCHA verification fails.</exception>
     public async Task<AuthResponse> LoginAsync(LoginRequest request)
     {
         await ValidateCaptchaAsync(request.CaptchaToken);
@@ -96,14 +97,14 @@ public sealed class AuthService : IAuthService
         if (user is null)
         {
             _logger.LogWarning("Failed login attempt for unknown email {Email}", email);
-            throw new NotFoundException($"No account found for '{email}'.");
+            throw new NotFoundException($"No account found for '{email}'.", ErrorCodes.UserNotFound);
         }
 
         var valid = await _userManager.CheckPasswordAsync(user, request.Password);
         if (!valid)
         {
             _logger.LogWarning("Failed login attempt for user {UserId}", user.Id);
-            throw new UnauthorizedAccessException("Invalid credentials.");
+            throw new AppUnauthorizedException("Invalid credentials.", ErrorCodes.InvalidCredentials);
         }
 
         var roles = await _userManager.GetRolesAsync(user);
@@ -114,7 +115,7 @@ public sealed class AuthService : IAuthService
     }
 
     /// <inheritdoc />
-    /// <exception cref="UnauthorizedAccessException">
+    /// <exception cref="AppUnauthorizedException">
     /// Thrown when the Google ID token is invalid, expired, or the associated email is not verified by Google.
     /// </exception>
     public async Task<AuthResponse> GoogleLoginAsync(GoogleLoginRequest request)
@@ -132,25 +133,25 @@ public sealed class AuthService : IAuthService
         catch (InvalidJwtException)
         {
             _logger.LogWarning("Google login attempt with invalid ID token");
-            throw new UnauthorizedAccessException("Invalid Google ID token.");
+            throw new AppUnauthorizedException("Invalid Google ID token.", ErrorCodes.InvalidGoogleToken);
         }
         catch (HttpRequestException ex)
         {
             _logger.LogError(ex, "Failed to reach Google JWKS endpoint");
-            throw new ServiceUnavailableException("Failed to reach Google JWKS endpoint.");
+            throw new ServiceUnavailableException("Failed to reach Google JWKS endpoint.", ErrorCodes.GoogleJwksUnavailable);
         }
 
         // Reject tokens where Google has not verified the email address.
         if (!payload.EmailVerified)
         {
             _logger.LogWarning("Google login rejected — email not verified by Google");
-            throw new UnauthorizedAccessException("Google account email is not verified.");
+            throw new AppUnauthorizedException("Google account email is not verified.", ErrorCodes.GoogleEmailNotVerified);
         }
 
         // The email claim is normally guaranteed for Google accounts, but guard
         // against malformed tokens that omit it to avoid a NullReferenceException.
         var email = payload.Email
-            ?? throw new UnauthorizedAccessException("Google ID token does not contain an email claim.");
+            ?? throw new AppUnauthorizedException("Google ID token does not contain an email claim.", ErrorCodes.GoogleEmailClaimMissing);
 
         var user = await _userManager.FindByEmailAsync(email);
 
@@ -187,26 +188,30 @@ public sealed class AuthService : IAuthService
     /// Centralises the check so callers cannot accidentally ignore the boolean result.
     /// </summary>
     /// <param name="captchaToken">The CAPTCHA token obtained from the client.</param>
-    /// <exception cref="UnauthorizedAccessException">Thrown when the CAPTCHA token is invalid.</exception>
+    /// <exception cref="AppUnauthorizedException">Thrown when the CAPTCHA token is invalid.</exception>
     private async Task ValidateCaptchaAsync(string captchaToken)
     {
         var isValid = await _captchaService.ValidateAsync(captchaToken);
         if (!isValid)
         {
             _logger.LogWarning("CAPTCHA verification failed");
-            throw new UnauthorizedAccessException("CAPTCHA verification failed.");
+            throw new AppUnauthorizedException("CAPTCHA verification failed.", ErrorCodes.CaptchaFailed);
         }
     }
 
     /// <summary>
     /// Converts a collection of <see cref="IdentityError"/> into a read-only dictionary
-    /// keyed by error code, as required by <see cref="ValidationException"/>.
+    /// keyed by field name, as required by <see cref="ValidationException"/>.
+    /// Each error is wrapped in a <see cref="ValidationFieldError"/> with a generic
+    /// <see cref="ErrorCodes.IdentityError"/> code so the front-end can apply an i18n fallback.
     /// </summary>
     /// <param name="errors">The Identity errors returned by a failed operation.</param>
-    /// <returns>A dictionary mapping each error code to its associated messages.</returns>
-    private static IReadOnlyDictionary<string, string[]> BuildValidationErrors(
+    /// <returns>A dictionary mapping each error code to its associated field errors.</returns>
+    private static IReadOnlyDictionary<string, ValidationFieldError[]> BuildValidationErrors(
         IEnumerable<IdentityError> errors) =>
         errors
             .GroupBy(e => e.Code)
-            .ToDictionary(g => g.Key, g => g.Select(e => e.Description).ToArray());
+            .ToDictionary(
+                g => g.Key,
+                g => g.Select(e => new ValidationFieldError(ErrorCodes.IdentityError, e.Description)).ToArray());
 }

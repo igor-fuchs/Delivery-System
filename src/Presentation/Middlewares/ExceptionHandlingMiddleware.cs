@@ -1,16 +1,18 @@
 using System.Net;
 using System.Text.Json;
+using DeliverySystem.Application.Constants;
 using DeliverySystem.Application.Exceptions;
 
 namespace DeliverySystem.Presentation.Middlewares;
 
 /// <summary>
 /// Middleware that catches unhandled exceptions and converts them into structured JSON error responses.
+/// Every response includes a machine-readable <c>errorCode</c> for front-end i18n.
 /// Maps known exception types to appropriate HTTP status codes:
 /// <list type="bullet">
 ///   <item><see cref="ValidationException"/> → 400 Bad Request</item>
 ///   <item><see cref="ConflictException"/> → 409 Conflict</item>
-///   <item><see cref="UnauthorizedAccessException"/> → 401 Unauthorized</item>
+///   <item><see cref="AppUnauthorizedException"/> → 401 Unauthorized</item>
 ///   <item><see cref="NotFoundException"/> → 404 Not Found</item>
 ///   <item><see cref="ServiceUnavailableException"/> → 503 Service Unavailable</item>
 ///   <item>All other exceptions → 500 Internal Server Error</item>
@@ -54,27 +56,27 @@ public sealed class ExceptionHandlingMiddleware
         {
             ValidationException validationEx => (
                 HttpStatusCode.BadRequest,
-                new ErrorResponse("Validation failed.", validationEx.Errors)
+                new ErrorResponse("Validation failed.", ErrorCodes.ValidationFailed, validationEx.Errors)
             ),
             ConflictException conflictEx => (
                 HttpStatusCode.Conflict,
-                new ErrorResponse(conflictEx.Message)
+                new ErrorResponse(conflictEx.Message, conflictEx.Code)
             ),
-            UnauthorizedAccessException unauthorizedEx => (
+            AppUnauthorizedException unauthorizedEx => (
                 HttpStatusCode.Unauthorized,
-                new ErrorResponse(unauthorizedEx.Message)
+                new ErrorResponse(unauthorizedEx.Message, unauthorizedEx.Code)
             ),
             NotFoundException notFoundEx => (
                 HttpStatusCode.NotFound,
-                new ErrorResponse(notFoundEx.Message)
+                new ErrorResponse(notFoundEx.Message, notFoundEx.Code)
             ),
             ServiceUnavailableException serviceUnavailableEx => (
                 HttpStatusCode.ServiceUnavailable,
-                new ErrorResponse(serviceUnavailableEx.Message)
+                new ErrorResponse(serviceUnavailableEx.Message, serviceUnavailableEx.Code)
             ),
             _ => (
                 HttpStatusCode.InternalServerError,
-                new ErrorResponse("An unexpected error occurred.")
+                new ErrorResponse("An unexpected error occurred.", ErrorCodes.InternalError)
             )
         };
 
@@ -90,7 +92,8 @@ public sealed class ExceptionHandlingMiddleware
 
     private sealed record ErrorResponse(
         string Message,
-        IReadOnlyDictionary<string, string[]>? Errors = null);
+        string ErrorCode,
+        IReadOnlyDictionary<string, ValidationFieldError[]>? Errors = null);
 
     private static class JsonOptions
     {

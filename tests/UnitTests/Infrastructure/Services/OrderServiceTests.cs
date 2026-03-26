@@ -1,3 +1,4 @@
+using DeliverySystem.Application.Constants;
 using DeliverySystem.Application.DTOs;
 using DeliverySystem.Application.Exceptions;
 using DeliverySystem.Domain.Entities;
@@ -146,7 +147,7 @@ public sealed class OrderServiceTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task GetByIdAsync_DifferentRequesterId_ThrowsUnauthorizedAccessException()
+    public async Task GetByIdAsync_DifferentRequesterId_ThrowsAppUnauthorizedException()
     {
         var userId = await SeedUserAsync();
         var otherUserId = await SeedUserAsync();
@@ -154,8 +155,10 @@ public sealed class OrderServiceTests : IAsyncDisposable
         var created = await _sut.CreateAsync(userId,
             new CreateOrderRequest("Desc", [new CreateOrderItemRequest(product.Id, 1)]));
 
-        await Assert.ThrowsAsync<UnauthorizedAccessException>(
+        var ex = await Assert.ThrowsAsync<AppUnauthorizedException>(
             () => _sut.GetByIdAsync(created.Id, requesterId: otherUserId));
+
+        Assert.Equal(ErrorCodes.OrderAccessDenied, ex.Code);
     }
 
     [Fact]
