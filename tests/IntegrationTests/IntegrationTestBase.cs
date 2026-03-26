@@ -100,7 +100,7 @@ public abstract class IntegrationTestBase : IAsyncLifetime
     }
 
     /// <summary>
-    /// Resets the fake CAPTCHA service to always pass before each test.
+    /// Resets fake services to their default state before each test.
     /// </summary>
     public Task InitializeAsync()
     {

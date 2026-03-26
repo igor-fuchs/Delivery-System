@@ -15,7 +15,7 @@
         "humao.rest-client",
         "github.actions",
         "github.copilot",
-        "anthropic.claude",
+        "anthropic.claude-code",
         "ms-mssql.mssql"
       ]
     }

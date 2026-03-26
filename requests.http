@@ -29,13 +29,95 @@ POST {{baseUrl}}/api/auth/google-login
 Content-Type: application/json
 
 {
-  "token": "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.invalid-signature",
+  "token": "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.invalid-signature"
 }
 
 ### ── Authenticated request  ─────────────────────────────────────
 
 @token = {{login.response.body.token}}
 
-### Protected endpoint
+### ── Products ──────────────────────────────────────────────────
+
+@productId = {{createProduct.response.body.id}}
+
+### Get all products (requires authentication)
 GET {{baseUrl}}/api/products
+Authorization: Bearer {{token}}
+
+### Get product by ID
+GET {{baseUrl}}/api/products/{{productId}}
+Authorization: Bearer {{token}}
+
+### Create product (admin only)
+# @name createProduct
+POST {{baseUrl}}/api/products
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Burger Deluxe",
+  "description": "Delicious burger with bacon, lettuce, tomato and special sauce",
+  "stock": true,
+  "price": 15.99
+}
+
+### Update product (admin only)
+PUT {{baseUrl}}/api/products/{{productId}}
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Burger Premium",
+  "description": "Updated description for premium burger",
+  "stock": true,
+  "price": 18.99
+}
+
+### Delete product (admin only)
+DELETE {{baseUrl}}/api/products/{{productId}}
+Authorization: Bearer {{token}}
+
+### ── Orders ────────────────────────────────────────────────────
+
+@orderId = {{createOrder.response.body.id}}
+
+### Get all orders (users see only their own, admins see all)
+GET {{baseUrl}}/api/orders
+Authorization: Bearer {{token}}
+
+### Get order by ID
+GET {{baseUrl}}/api/orders/{{orderId}}
+Authorization: Bearer {{token}}
+
+### Create order (authenticated users)
+# @name createOrder
+POST {{baseUrl}}/api/orders
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "description": "Delivery for Friday evening",
+  "items": [
+    {
+      "productId": "{{productId}}",
+      "quantity": 2
+    },
+    {
+      "productId": "{{productId}}",
+      "quantity": 1
+    }
+  ]
+}
+
+### Update order status (admin only)
+PUT {{baseUrl}}/api/orders/{{orderId}}
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "status": "Shipped"
+}
+
+### Delete order (admin only)
+DELETE {{baseUrl}}/api/orders/{{orderId}}
 Authorization: Bearer {{token}}

@@ -1,5 +1,5 @@
+using DeliverySystem.Application.Exceptions;
 using FluentValidation;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using ValidationException = DeliverySystem.Application.Exceptions.ValidationException;
 
@@ -9,6 +9,8 @@ namespace DeliverySystem.Presentation.Filters;
 /// Action filter that automatically validates request models using FluentValidation.
 /// Throws a <see cref="ValidationException"/> when validation fails,
 /// which is then handled by the <see cref="DeliverySystem.Presentation.Middlewares.ExceptionHandlingMiddleware"/>.
+/// Each field error carries a machine-readable <see cref="ValidationFieldError.Code"/> for i18n
+/// sourced from <c>.WithErrorCode(...)</c> on each validator rule.
 /// </summary>
 public sealed class ValidationFilter : IAsyncActionFilter
 {
@@ -46,7 +48,7 @@ public sealed class ValidationFilter : IAsyncActionFilter
                     .GroupBy(e => e.PropertyName)
                     .ToDictionary(
                         g => g.Key,
-                        g => g.Select(e => e.ErrorMessage).ToArray()
+                        g => g.Select(e => new ValidationFieldError(e.ErrorCode, e.ErrorMessage)).ToArray()
                     );
 
                 throw new ValidationException(errors);
