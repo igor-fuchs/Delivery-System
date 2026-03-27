@@ -12,32 +12,65 @@ public sealed class RateLimitOptions
     public const string SectionName = "RateLimit";
 
     /// <summary>
-    /// Name of the authorization policy that applies the auth endpoint rate limiter.
-    /// This policy should be used with [EnableRateLimiting] on auth-related controllers/actions.
+    /// Name of the rate limiting policy applied to auth endpoints.
     /// </summary>
     public const string AuthPolicyName = "Auth";
 
     /// <summary>
-    /// Gets the maximum number of requests permitted per <see cref="AuthWindowMinutes"/> for the auth endpoints.
+    /// Name of the rate limiting policy applied to product endpoints.
     /// </summary>
-    [Range(1, int.MaxValue)]
-    public int AuthPermitLimit { get; init; } = 10;
+    public const string ProductsPolicyName = "Products";
 
     /// <summary>
-    /// Gets the sliding window duration in minutes for auth endpoint rate limiting.
+    /// Name of the rate limiting policy applied to order endpoints.
     /// </summary>
-    [Range(1, int.MaxValue)]
-    public int AuthWindowMinutes { get; init; } = 30;
+    public const string OrdersPolicyName = "Orders";
 
     /// <summary>
     /// Gets the maximum number of requests permitted per <see cref="GlobalWindowMinutes"/> for all endpoints (global limiter).
     /// </summary>
     [Range(1, int.MaxValue)]
-    public int GlobalPermitLimit { get; init; } = 30;
+    public required int GlobalPermitLimit { get; init; }
 
     /// <summary>
     /// Gets the sliding window duration in minutes for the global rate limiter.
     /// </summary>
     [Range(1, int.MaxValue)]
-    public int GlobalWindowMinutes { get; init; } = 10;
+    public required int GlobalWindowMinutes { get; init; }
+
+    /// <summary>
+    /// Gets the maximum number of requests permitted per <see cref="AuthWindowMinutes"/> for the auth endpoints.
+    /// </summary>
+    [Range(1, int.MaxValue)]
+    public required int AuthPermitLimit { get; init; }
+
+    /// <summary>
+    /// Gets the sliding window duration in minutes for auth endpoint rate limiting.
+    /// </summary>
+    [Range(1, int.MaxValue)]
+    public required int AuthWindowMinutes { get; init; }
+
+    /// <summary>
+    /// Gets the maximum number of requests permitted per <see cref="ProductsWindowMinutes"/> for product endpoints, per IP address.
+    /// </summary>
+    [Range(1, int.MaxValue)]
+    public required int ProductsPermitLimit { get; init; }
+
+    /// <summary>
+    /// Gets the window duration in minutes for the products rate limiter.
+    /// </summary>
+    [Range(1, int.MaxValue)]
+    public required int ProductsWindowMinutes { get; init; }
+
+    /// <summary>
+    /// Gets the maximum number of requests permitted per <see cref="OrdersWindowMinutes"/> for order endpoints, per IP address.
+    /// </summary>
+    [Range(1, int.MaxValue)]
+    public required int OrdersPermitLimit { get; init; }
+
+    /// <summary>
+    /// Gets the window duration in minutes for the orders rate limiter.
+    /// </summary>
+    [Range(1, int.MaxValue)]
+    public required int OrdersWindowMinutes { get; init; }
 }

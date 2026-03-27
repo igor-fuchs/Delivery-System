@@ -1,8 +1,5 @@
 using System.Threading.RateLimiting;
 using DeliverySystem.Application.Options;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using RedisRateLimiting;
 using StackExchange.Redis;
 
@@ -44,7 +41,7 @@ public static class RateLimiterExtensions
                 var partitionKey = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
                 var multiplexer = context.RequestServices.GetService<IConnectionMultiplexer>();
 
-                if (multiplexer is not null)
+                if (multiplexer is not null && multiplexer.IsConnected)
                 {
                     return RedisRateLimitPartition.GetFixedWindowRateLimiter(
                         partitionKey: partitionKey,
@@ -67,13 +64,57 @@ public static class RateLimiterExtensions
                     });
             });
 
+            // Named policy applied to product endpoints — per-IP, more restrictive than the
+            // global limiter to protect the product catalog from excessive polling.
+            options.AddPolicy(RateLimitOptions.ProductsPolicyName, context =>
+                RateLimitPartition.GetFixedWindowLimiter(
+                    partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                    factory: _ => new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = opts.ProductsPermitLimit,
+                        Window = TimeSpan.FromMinutes(opts.ProductsWindowMinutes),
+                        QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                        QueueLimit = 0
+                    }
+                )
+            );
+
+            // Named policy applied to order endpoints — per-IP, Redis-backed when available.
+            options.AddPolicy(RateLimitOptions.OrdersPolicyName, context =>
+            {
+                var partitionKey = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+                var multiplexer = context.RequestServices.GetService<IConnectionMultiplexer>();
+
+                if (multiplexer is not null && multiplexer.IsConnected)
+                {
+                    return RedisRateLimitPartition.GetFixedWindowRateLimiter(
+                        partitionKey: partitionKey,
+                        factory: _ => new RedisFixedWindowRateLimiterOptions
+                        {
+                            PermitLimit = opts.OrdersPermitLimit,
+                            Window = TimeSpan.FromMinutes(opts.OrdersWindowMinutes),
+                            ConnectionMultiplexerFactory = () => multiplexer
+                        });
+                }
+
+                return RateLimitPartition.GetFixedWindowLimiter(
+                    partitionKey: partitionKey,
+                    factory: _ => new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = opts.OrdersPermitLimit,
+                        Window = TimeSpan.FromMinutes(opts.OrdersWindowMinutes),
+                        QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                        QueueLimit = 0
+                    });
+            });
+
             // Global IP-based limiter applied to every request
             options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
             {
                 var partitionKey = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
                 var multiplexer = context.RequestServices.GetService<IConnectionMultiplexer>();
 
-                if (multiplexer is not null)
+                if (multiplexer is not null && multiplexer.IsConnected)
                 {
                     return RedisRateLimitPartition.GetFixedWindowRateLimiter(
                         partitionKey: partitionKey,

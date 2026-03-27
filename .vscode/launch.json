@@ -1,0 +1,65 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Run API (Development)",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "${workspaceFolder}/artifacts/bin/Presentation/debug/Presentation.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/src/Presentation",
+      "stopAtEntry": false,
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "http://localhost:5000",
+        "Jwt__SecretKey": "change-me-to-a-strong-secret-key-minimum-32-characters!!",
+        "Database__ConnectionString": "Server=localhost,1433;Database=DeliverySystem;User Id=sa;Password=YourStrong!Passw0rd;TrustServerCertificate=True",
+        "Redis__ConnectionString": "localhost:6379",
+        "AdminSeed__Email": "admin@delivery-system.com",
+        "AdminSeed__Password": "Admin@Str0ng!Pass"
+      },
+      "envFile": "${workspaceFolder}/.env",
+      "sourceFileMap": {
+        "/Views": "${workspaceFolder}/Views"
+      }
+    },
+    {
+      "name": "Attach to Process",
+      "type": "coreclr",
+      "request": "attach"
+    },
+    {
+      "name": "Run Unit Tests",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "dotnet",
+      "args": [
+        "test",
+        "${workspaceFolder}/tests/UnitTests/UnitTests.csproj",
+        "--logger",
+        "console;verbosity=detailed"
+      ],
+      "cwd": "${workspaceFolder}",
+      "stopAtEntry": false,
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Run Integration Tests",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "dotnet",
+      "args": [
+        "test",
+        "${workspaceFolder}/tests/IntegrationTests/IntegrationTests.csproj",
+        "--logger",
+        "console;verbosity=detailed"
+      ],
+      "cwd": "${workspaceFolder}",
+      "stopAtEntry": false,
+      "console": "integratedTerminal"
+    }
+  ]
+}

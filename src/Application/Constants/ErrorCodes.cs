@@ -59,6 +59,14 @@ public static class ErrorCodes
     /// <summary>The authenticated user is not allowed to access this order.</summary>
     public const string OrderAccessDenied = "ORDER_ACCESS_DENIED";
 
+    // ── Idempotency ─────────────────────────────────────────────────────────
+
+    /// <summary>The Idempotency-Key header is missing from the request.</summary>
+    public const string IdempotencyKeyMissing = "IDEMPOTENCY_KEY_MISSING";
+
+    /// <summary>The Idempotency-Key header exceeds the maximum allowed length.</summary>
+    public const string IdempotencyKeyTooLong = "IDEMPOTENCY_KEY_TOO_LONG";
+
     // ── Validation field codes — Auth ─────────────────────────────────────────
 
     /// <summary>Email field is required.</summary>

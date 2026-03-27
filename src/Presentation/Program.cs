@@ -14,7 +14,7 @@ using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddOpenApi();
+builder.Services.AddOpenApiConfiguration();
 
 builder.Services
     .AddOptions<JwtOptions>()
