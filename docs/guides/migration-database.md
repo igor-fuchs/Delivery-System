@@ -1,17 +1,20 @@
-# migration-database
+# Database Migrations
 
-## Gerando o banco de dados
+## Applying Migrations
 
-### Opção 1 — Automático (recomendado)
+### Option 1 — Automatic (recommended)
 
-O banco é criado e as migrations são aplicadas automaticamente no startup da API em ambiente `Development`. Basta subir os containers que o banco já estará pronto.
-
-### Opção 2 — Manual via CLI
-
-Com os containers rodando, execute a partir do devcontainer ou da máquina host (com .NET SDK instalado):
+In `Development` mode, the API automatically applies pending migrations on startup. Simply run the containers and the database will be ready.
 
 ```bash
-# Certifique-se que as variáveis do .env estão disponíveis
+docker compose up --build
+```
+
+### Option 2 — Manual via CLI
+
+With the containers running (or a local SQL Server available), run from the project root with the `.env` variables exported:
+
+```bash
 export $(grep -v '^#' .env | xargs)
 
 dotnet ef database update \
@@ -19,18 +22,22 @@ dotnet ef database update \
   --startup-project src/Presentation/Presentation.csproj
 ```
 
-### Criando uma nova migration
+---
 
-Após alterar entidades ou o `ApplicationDbContext`:
+## Creating a New Migration
+
+After modifying any entity or `ApplicationDbContext`:
 
 ```bash
-dotnet ef migrations add <NomeDaMigration> \
+dotnet ef migrations add <MigrationName> \
   --project src/Infrastructure/Infrastructure.csproj \
   --startup-project src/Presentation/Presentation.csproj \
   --output-dir Data/Migrations
 ```
 
-### Revertendo a última migration
+---
+
+## Reverting the Last Migration
 
 ```bash
 dotnet ef migrations remove \
@@ -38,18 +45,4 @@ dotnet ef migrations remove \
   --startup-project src/Presentation/Presentation.csproj
 ```
 
----
-
-## Tabelas criadas pelo Identity
-
-| Tabela | Descrição |
-|---|---|
-| `AspNetUsers` | Usuários do sistema (inclui `Name` e `CreatedAt`) |
-| `AspNetRoles` | Roles de autorização |
-| `AspNetUserRoles` | Vínculo N:N entre usuário e role |
-| `AspNetUserClaims` | Claims associadas a usuários |
-| `AspNetRoleClaims` | Claims associadas a roles |
-| `AspNetUserLogins` | Provedores externos (OAuth) |
-| `AspNetUserTokens` | Tokens de refresh e 2FA |
-
----
+> `migrations remove` only removes the last unapplied migration. If the migration has already been applied to the database, run `dotnet ef database update <PreviousMigrationName>` first to roll back.
