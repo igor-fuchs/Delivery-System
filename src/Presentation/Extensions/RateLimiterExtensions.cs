@@ -1,8 +1,5 @@
 using System.Threading.RateLimiting;
 using DeliverySystem.Application.Options;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using RedisRateLimiting;
 using StackExchange.Redis;
 
@@ -44,7 +41,7 @@ public static class RateLimiterExtensions
                 var partitionKey = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
                 var multiplexer = context.RequestServices.GetService<IConnectionMultiplexer>();
 
-                if (multiplexer is not null)
+                if (multiplexer is not null && multiplexer.IsConnected)
                 {
                     return RedisRateLimitPartition.GetFixedWindowRateLimiter(
                         partitionKey: partitionKey,
@@ -88,7 +85,7 @@ public static class RateLimiterExtensions
                 var partitionKey = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
                 var multiplexer = context.RequestServices.GetService<IConnectionMultiplexer>();
 
-                if (multiplexer is not null)
+                if (multiplexer is not null && multiplexer.IsConnected)
                 {
                     return RedisRateLimitPartition.GetFixedWindowRateLimiter(
                         partitionKey: partitionKey,
@@ -117,7 +114,7 @@ public static class RateLimiterExtensions
                 var partitionKey = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
                 var multiplexer = context.RequestServices.GetService<IConnectionMultiplexer>();
 
-                if (multiplexer is not null)
+                if (multiplexer is not null && multiplexer.IsConnected)
                 {
                     return RedisRateLimitPartition.GetFixedWindowRateLimiter(
                         partitionKey: partitionKey,
