@@ -57,6 +57,8 @@ public sealed class DeliverySystemFactory : WebApplicationFactory<Program>, IAsy
         builder.UseSetting("RateLimit:GlobalWindowMinutes", "1");
         builder.UseSetting("RateLimit:ProductsPermitLimit", "10000");
         builder.UseSetting("RateLimit:ProductsWindowMinutes", "1");
+        builder.UseSetting("RateLimit:OrdersPermitLimit", "10000");
+        builder.UseSetting("RateLimit:OrdersWindowMinutes", "1");
 
         builder.ConfigureAppConfiguration((_, config) =>
         {
