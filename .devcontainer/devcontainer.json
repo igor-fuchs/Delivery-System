@@ -1,6 +1,6 @@
 {
   "name": "Delivery System",
-  "dockerComposeFile": "../docker/docker-compose.yml",
+  "dockerComposeFile": "../docker-compose.yml",
   "service": "api",
   "workspaceFolder": "/workspace",
   "customizations": {
@@ -13,7 +13,9 @@
         "ms-dotnettools.csdevkit",
         "ms-dotnettools.csharp",
         "humao.rest-client",
+        "github.actions",
         "github.copilot",
+        "anthropic.claude-code",
         "ms-mssql.mssql"
       ]
     }

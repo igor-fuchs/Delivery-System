@@ -5,16 +5,18 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using StackExchange.Redis;
 
 namespace DeliverySystem.IntegrationTests.Infrastructure;
 
 /// <summary>
 /// Custom <see cref="WebApplicationFactory{TEntryPoint}"/> that replaces production services
 /// with test-friendly alternatives: SQLite in-memory database, fake CAPTCHA service,
-/// and elevated rate limits.
+/// in-memory distributed cache, and elevated rate limits.
 /// </summary>
 public sealed class DeliverySystemFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
@@ -40,6 +42,12 @@ public sealed class DeliverySystemFactory : WebApplicationFactory<Program>, IAsy
         builder.UseSetting("Jwt:ExpirationMinutes", "60");
         builder.UseSetting("Cors:AuthAllowedOrigins:0", "http://localhost");
         builder.UseSetting("Cors:AuthAllowedMethods:0", "POST");
+
+        // Redis — UseSetting so options validation passes during startup.
+        // The actual connection is replaced in ConfigureServices below.
+        builder.UseSetting("Redis:ConnectionString", "localhost:6379");
+        builder.UseSetting("Redis:InstanceName", "Test:");
+        builder.UseSetting("Redis:ProductCacheTtlMinutes", "10");
 
         // Rate limiting — UseSetting so values are available when AddAuthRateLimiter
         // reads configuration eagerly during Program.cs service registration.
@@ -98,6 +106,13 @@ public sealed class DeliverySystemFactory : WebApplicationFactory<Program>, IAsy
                 services.Remove(captchaDescriptor);
 
             services.AddSingleton<ICaptchaService>(CaptchaService);
+
+            // Replace Redis distributed cache with in-memory implementation
+            services.RemoveAll<IDistributedCache>();
+            services.AddDistributedMemoryCache();
+
+            // Remove Redis connection so rate limiters fall back to in-memory
+            services.RemoveAll<IConnectionMultiplexer>();
         });
     }
 

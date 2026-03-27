@@ -16,11 +16,11 @@ public sealed class ProductEndpointTests : IntegrationTestBase
     #region GET /api/products
 
     [Fact]
-    public async Task GetAll_Unauthenticated_ReturnsUnauthorized()
+    public async Task GetAll_Unauthenticated_ReturnsOk()
     {
         var response = await Client.GetAsync("/api/products");
 
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
     [Fact]

@@ -1,8 +1,9 @@
 using DeliverySystem.Application.DTOs;
 using DeliverySystem.Application.Exceptions;
 using DeliverySystem.Application.Interfaces;
+using DeliverySystem.Application.Constants;
 using DeliverySystem.Application.Options;
-using DeliverySystem.Infrastructure.Data;
+using DeliverySystem.Infrastructure.Identity;
 using DeliverySystem.Infrastructure.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
@@ -99,18 +100,18 @@ public sealed class AuthServiceTests
         var ex = await Assert.ThrowsAsync<ValidationException>(() => _sut.RegisterAsync(request));
 
         Assert.Contains("PasswordTooShort", ex.Errors.Keys);
-        Assert.Contains("Password too short.", ex.Errors["PasswordTooShort"]);
+        Assert.Equal("Password too short.", ex.Errors["PasswordTooShort"][0].Message);
     }
 
     [Fact]
-    public async Task RegisterAsync_CaptchaFails_ShouldThrowUnauthorizedAccessException()
+    public async Task RegisterAsync_CaptchaFails_ShouldThrowAppUnauthorizedException()
     {
         var request = new RegisterRequest("user@example.com", "Str0ng!Pass", "bad-captcha");
 
         _captchaService.ValidateAsync("bad-captcha", Arg.Any<CancellationToken>())
             .Returns(false);
 
-        var ex = await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _sut.RegisterAsync(request));
+        var ex = await Assert.ThrowsAsync<AppUnauthorizedException>(() => _sut.RegisterAsync(request));
 
         Assert.Equal("CAPTCHA verification failed.", ex.Message);
     }
@@ -168,7 +169,7 @@ public sealed class AuthServiceTests
     }
 
     [Fact]
-    public async Task LoginAsync_WrongPassword_ShouldThrowUnauthorizedAccessException()
+    public async Task LoginAsync_WrongPassword_ShouldThrowAppUnauthorizedException()
     {
         var request = new LoginRequest("user@example.com", "wrong", "captcha");
         var user = new ApplicationUser { Email = "user@example.com" };
@@ -176,20 +177,20 @@ public sealed class AuthServiceTests
         _userManager.FindByEmailAsync("user@example.com").Returns(user);
         _userManager.CheckPasswordAsync(user, "wrong").Returns(false);
 
-        var ex = await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _sut.LoginAsync(request));
+        var ex = await Assert.ThrowsAsync<AppUnauthorizedException>(() => _sut.LoginAsync(request));
 
         Assert.Equal("Invalid credentials.", ex.Message);
     }
 
     [Fact]
-    public async Task LoginAsync_CaptchaFails_ShouldThrowUnauthorizedAccessException()
+    public async Task LoginAsync_CaptchaFails_ShouldThrowAppUnauthorizedException()
     {
         var request = new LoginRequest("user@example.com", "Str0ng!Pass", "bad");
 
         _captchaService.ValidateAsync("bad", Arg.Any<CancellationToken>())
             .Returns(false);
 
-        var ex = await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _sut.LoginAsync(request));
+        var ex = await Assert.ThrowsAsync<AppUnauthorizedException>(() => _sut.LoginAsync(request));
 
         Assert.Equal("CAPTCHA verification failed.", ex.Message);
     }
@@ -202,7 +203,7 @@ public sealed class AuthServiceTests
         _captchaService.ValidateAsync("bad", Arg.Any<CancellationToken>())
             .Returns(false);
 
-        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _sut.LoginAsync(request));
+        await Assert.ThrowsAsync<AppUnauthorizedException>(() => _sut.LoginAsync(request));
 
         await _userManager.DidNotReceive().FindByEmailAsync(Arg.Any<string>());
     }

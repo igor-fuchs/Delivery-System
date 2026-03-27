@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text.Json;
+using DeliverySystem.Application.Constants;
 using DeliverySystem.Application.Exceptions;
 using DeliverySystem.Presentation.Middlewares;
 using Microsoft.AspNetCore.Http;
@@ -30,11 +31,11 @@ public sealed class ExceptionHandlingMiddlewareTests
     }
 
     [Fact]
-    public async Task InvokeAsync_ValidationException_ShouldReturn400()
+    public async Task InvokeAsync_ValidationException_ShouldReturn400WithErrorCode()
     {
-        var errors = new Dictionary<string, string[]>
+        var errors = new Dictionary<string, ValidationFieldError[]>
         {
-            ["Email"] = ["Email is required."]
+            ["Email"] = [new ValidationFieldError(ErrorCodes.EmailRequired, "Email is required.")]
         };
 
         var context = await InvokeMiddlewareAsync(new ValidationException(errors));
@@ -44,33 +45,36 @@ public sealed class ExceptionHandlingMiddlewareTests
 
         var body = await DeserializeResponseAsync(context);
         Assert.Equal("Validation failed.", body.GetProperty("message").GetString());
+        Assert.Equal(ErrorCodes.ValidationFailed, body.GetProperty("errorCode").GetString());
         Assert.True(body.TryGetProperty("errors", out _));
     }
 
     [Fact]
-    public async Task InvokeAsync_ConflictException_ShouldReturn409()
+    public async Task InvokeAsync_ConflictException_ShouldReturn409WithErrorCode()
     {
-        var context = await InvokeMiddlewareAsync(new ConflictException("User already exists."));
+        var context = await InvokeMiddlewareAsync(new ConflictException("User already exists.", ErrorCodes.UserAlreadyExists));
 
         Assert.Equal((int)HttpStatusCode.Conflict, context.Response.StatusCode);
 
         var body = await DeserializeResponseAsync(context);
         Assert.Equal("User already exists.", body.GetProperty("message").GetString());
+        Assert.Equal(ErrorCodes.UserAlreadyExists, body.GetProperty("errorCode").GetString());
     }
 
     [Fact]
-    public async Task InvokeAsync_UnauthorizedAccessException_ShouldReturn401()
+    public async Task InvokeAsync_AppUnauthorizedException_ShouldReturn401WithErrorCode()
     {
-        var context = await InvokeMiddlewareAsync(new UnauthorizedAccessException("Invalid credentials."));
+        var context = await InvokeMiddlewareAsync(new AppUnauthorizedException("Invalid credentials.", ErrorCodes.InvalidCredentials));
 
         Assert.Equal((int)HttpStatusCode.Unauthorized, context.Response.StatusCode);
 
         var body = await DeserializeResponseAsync(context);
         Assert.Equal("Invalid credentials.", body.GetProperty("message").GetString());
+        Assert.Equal(ErrorCodes.InvalidCredentials, body.GetProperty("errorCode").GetString());
     }
 
     [Fact]
-    public async Task InvokeAsync_GenericException_ShouldReturn500()
+    public async Task InvokeAsync_GenericException_ShouldReturn500WithErrorCode()
     {
         var context = await InvokeMiddlewareAsync(new InvalidOperationException("Something broke"));
 
@@ -78,6 +82,7 @@ public sealed class ExceptionHandlingMiddlewareTests
 
         var body = await DeserializeResponseAsync(context);
         Assert.Equal("An unexpected error occurred.", body.GetProperty("message").GetString());
+        Assert.Equal(ErrorCodes.InternalError, body.GetProperty("errorCode").GetString());
     }
 
     [Fact]

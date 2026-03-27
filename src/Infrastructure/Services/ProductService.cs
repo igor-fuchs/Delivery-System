@@ -1,3 +1,4 @@
+using DeliverySystem.Application.Constants;
 using DeliverySystem.Application.DTOs;
 using DeliverySystem.Application.Exceptions;
 using DeliverySystem.Application.Interfaces;
@@ -42,7 +43,7 @@ public sealed class ProductService : IProductService
             .FirstOrDefaultAsync(p => p.Id == id, ct);
 
         if (product is null)
-            throw new NotFoundException($"Product '{id}' was not found.");
+            throw new NotFoundException($"Product '{id}' was not found.", ErrorCodes.ProductNotFound);
 
         return MapToResponse(product);
     }
@@ -72,7 +73,7 @@ public sealed class ProductService : IProductService
         var product = await _context.Products.FindAsync([id], ct);
 
         if (product is null)
-            throw new NotFoundException($"Product '{id}' was not found.");
+            throw new NotFoundException($"Product '{id}' was not found.", ErrorCodes.ProductNotFound);
 
         product.Name = request.Name;
         product.Description = request.Description;
@@ -90,7 +91,7 @@ public sealed class ProductService : IProductService
         var product = await _context.Products.FindAsync([id], ct);
 
         if (product is null)
-            throw new NotFoundException($"Product '{id}' was not found.");
+            throw new NotFoundException($"Product '{id}' was not found.", ErrorCodes.ProductNotFound);
 
         _context.Products.Remove(product);
         await _context.SaveChangesAsync(ct);

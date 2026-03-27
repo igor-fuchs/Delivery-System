@@ -1,7 +1,9 @@
 using DeliverySystem.Application.Interfaces;
 using DeliverySystem.Application.Options;
 using DeliverySystem.Infrastructure.Data;
+using DeliverySystem.Infrastructure.Identity;
 using DeliverySystem.Infrastructure.Services;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -9,6 +11,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
+using StackExchange.Redis;
 
 namespace DeliverySystem.Infrastructure;
 
@@ -51,9 +54,43 @@ public static class DependencyInjection
             .AddRoles<IdentityRole<Guid>>()
             .AddEntityFrameworkStores<ApplicationDbContext>();
 
+        // Redis — abortConnect=false prevents startup failures when Redis is temporarily
+        // unavailable (e.g. during integration tests or delayed container startup).
+        services
+            .AddOptions<RedisOptions>()
+            .BindConfiguration(RedisOptions.SectionName)
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        var redisOpts = configuration.GetSection(RedisOptions.SectionName).Get<RedisOptions>()!;
+        var redisConfig = ConfigurationOptions.Parse(redisOpts.ConnectionString);
+        redisConfig.AbortOnConnectFail = false;
+        var multiplexer = ConnectionMultiplexer.Connect(redisConfig);
+
+        services.AddSingleton<IConnectionMultiplexer>(multiplexer);
+
+        services.AddStackExchangeRedisCache(options =>
+        {
+            options.ConnectionMultiplexerFactory = () => Task.FromResult<IConnectionMultiplexer>(multiplexer);
+            options.InstanceName = redisOpts.InstanceName;
+        });
+
+        // Persist Data Protection keys to Redis so they survive container restarts.
+        services.AddDataProtection()
+            .PersistKeysToStackExchangeRedis(multiplexer, "DataProtection-Keys")
+            .SetApplicationName("DeliverySystem");
+
+        // Services
         services.AddSingleton<ITokenService, TokenService>();
         services.AddScoped<IAuthService, AuthService>();
-        services.AddScoped<IProductService, ProductService>();
+
+        services.AddScoped<ProductService>();
+        services.AddScoped<IProductService>(sp =>
+            new CachedProductService(
+                sp.GetRequiredService<ProductService>(),
+                sp.GetRequiredService<Microsoft.Extensions.Caching.Distributed.IDistributedCache>(),
+                sp.GetRequiredService<IOptions<RedisOptions>>()));
+
         services.AddScoped<IOrderService, OrderService>();
         services.AddScoped<DatabaseSeeder>();
 

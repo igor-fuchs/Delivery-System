@@ -7,8 +7,17 @@ namespace DeliverySystem.Application.Exceptions;
 public sealed class NotFoundException : Exception
 {
     /// <summary>
+    /// Gets the machine-readable error code for i18n translation lookup.
+    /// </summary>
+    public string Code { get; }
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="NotFoundException"/> class.
     /// </summary>
     /// <param name="message">A description of the missing resource.</param>
-    public NotFoundException(string message) : base(message) { }
+    /// <param name="code">Machine-readable error code (see <see cref="Constants.ErrorCodes"/>).</param>
+    public NotFoundException(string message, string code) : base(message)
+    {
+        Code = code;
+    }
 }

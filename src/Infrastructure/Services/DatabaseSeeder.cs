@@ -1,6 +1,6 @@
 using DeliverySystem.Application.Options;
 using DeliverySystem.Domain.Constants;
-using DeliverySystem.Infrastructure.Data;
+using DeliverySystem.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;

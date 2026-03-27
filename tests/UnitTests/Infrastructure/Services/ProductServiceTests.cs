@@ -45,30 +45,6 @@ public sealed class ProductServiceTests : IAsyncDisposable
         CreatedAt = DateTime.UtcNow
     };
 
-    #region ExistsAsync
-
-    [Fact]
-    public async Task ExistsAsync_ExistingId_ReturnsTrue()
-    {
-        var product = MakeProduct();
-        _context.Products.Add(product);
-        await _context.SaveChangesAsync();
-
-        var result = await _sut.ExistsAsync(product.Id);
-
-        Assert.True(result);
-    }
-
-    [Fact]
-    public async Task ExistsAsync_MissingId_ReturnsFalse()
-    {
-        var result = await _sut.ExistsAsync(Guid.NewGuid());
-
-        Assert.False(result);
-    }
-
-    #endregion
-
     #region GetAllAsync
 
     [Fact]

@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 
-namespace DeliverySystem.Infrastructure.Data;
+namespace DeliverySystem.Infrastructure.Identity;
 
 /// <summary>
 /// ASP.NET Core Identity user entity for the delivery system.
