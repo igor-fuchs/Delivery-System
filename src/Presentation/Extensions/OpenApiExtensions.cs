@@ -27,58 +27,51 @@ public static class OpenApiExtensions
                     Title = "Delivery System API",
                     Version = "v1",
                     Description = """
-                        RESTful API for a delivery system that manages user authentication, product catalog, and order lifecycle.
-
-                        ## Authentication
-                        All endpoints (except `/api/auth/*`) require a **JWT Bearer token** in the `Authorization` header.
-                        Obtain a token via `POST /api/auth/register`, `POST /api/auth/login`, or `POST /api/auth/google`.
+                        RESTful API for a delivery system covering authentication, product catalog, and order management.
 
                         ## Roles
-                        - **user** — Can browse products and manage their own orders.
-                        - **admin** — Full access: manage products, view/update/delete any order.
+                        | Role | Access |
+                        |------|--------|
+                        | `user` | Browse products, manage own orders |
+                        | `admin` | Full access — products, all orders |
 
                         ## Rate Limiting
-                        All endpoints are rate-limited per IP address. Auth endpoints have stricter limits.
-                        When the limit is exceeded, the API returns `429 Too Many Requests`.
+                        All endpoints are rate-limited per IP. Auth endpoints have stricter limits.
+                        Exceeding the limit returns `429 Too Many Requests`.
 
                         ## Idempotency
-                        The `POST /api/orders` endpoint requires an `Idempotency-Key` header (max 64 characters).
-                        Repeated requests with the same key within 60 minutes return the cached original response.
+                        `POST /api/orders` requires an `Idempotency-Key` header (max 64 chars).
+                        Duplicate requests with the same key within 60 minutes return the cached response.
 
-                        ## Error Responses
-                        All errors follow a consistent JSON structure with a machine-readable `errorCode` for i18n:
+                        ## Error Response
                         ```json
                         {
-                          "message": "Human-readable description",
-                          "errorCode": "MACHINE_READABLE_CODE",
-                          "errors": {
-                            "fieldName": [{ "code": "FIELD_CODE", "message": "..." }]
-                          }
+                            "message": "Human-readable description",
+                            "errorCode": "MACHINE_READABLE_CODE",
+                            "errors": {
+                                "fieldName": [{ "code": "FIELD_CODE", "message": "..." }]
+                            }
                         }
                         ```
-                        The `errors` field is only present for validation errors (`errorCode: "VALIDATION_FAILED"`).
+                        > `errors` is only present on validation failures (`errorCode: "VALIDATION_FAILED"`).
                         """,
                     Contact = new OpenApiContact
                     {
                         Name = "Delivery System Team"
                     },
-                    License = new OpenApiLicense
-                    {
-                        Name = "MIT"
-                    }
                 };
 
                 document.Servers =
                 [
                     new OpenApiServer
                     {
-                        Url = "http://localhost:5000",
-                        Description = "Local Development (Docker Compose)"
+                        Url = "http://localhost:8080",
+                        Description = "Docker Compose"
                     },
                     new OpenApiServer
                     {
-                        Url = "https://localhost:5001",
-                        Description = "Local Development (HTTPS)"
+                        Url = "https://localhost:5000",
+                        Description = "Run and Debug in Visual Studio"
                     }
                 ];
 
@@ -109,7 +102,7 @@ public static class OpenApiExtensions
                         Type = SecuritySchemeType.Http,
                         Scheme = JwtBearerDefaults.AuthenticationScheme.ToLowerInvariant(),
                         BearerFormat = "JWT",
-                        Description = "Enter the JWT token obtained from the auth endpoints. Example: `eyJhbGciOi...`"
+                        Description = "Enter the JWT token obtained from the auth endpoints."
                     }
                 };
 
