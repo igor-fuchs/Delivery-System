@@ -33,7 +33,7 @@ public sealed class AuthController : ControllerBase
     /// <summary>
     /// Registers a new user.
     /// </summary>
-    /// <param name="request">The registration payload containing name, email, and password.</param>
+    /// <param name="request">The registration payload containing email, password and captcha token.</param>
     /// <returns>An <see cref="AuthResponse"/> with the user ID, email, and JWT token.</returns>
     /// <response code="200">User registered successfully.</response>
     /// <response code="400">Validation errors in the request.</response>
@@ -53,7 +53,7 @@ public sealed class AuthController : ControllerBase
     /// <summary>
     /// Authenticates an existing user.
     /// </summary>
-    /// <param name="request">The login payload containing email and password.</param>
+    /// <param name="request">The login payload containing email, password, and captcha token.</param>
     /// <returns>An <see cref="AuthResponse"/> with the user ID, email, and JWT token.</returns>
     /// <response code="200">Login successful.</response>
     /// <response code="400">Validation errors in the request.</response>

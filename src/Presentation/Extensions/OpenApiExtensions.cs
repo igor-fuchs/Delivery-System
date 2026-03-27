@@ -1,3 +1,4 @@
+using DeliverySystem.Presentation.Filters;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.OpenApi;
 using Microsoft.OpenApi;
@@ -126,6 +127,27 @@ public static class OpenApiExtensions
                             [new OpenApiSecuritySchemeReference("Bearer")] = new List<string>()
                         }
                     ];
+                }
+
+                var hasFilter = context.Description.ActionDescriptor.EndpointMetadata
+                    .OfType<IdempotencyFilter>()
+                    .Any();
+
+                if (hasFilter)
+                {
+                    operation.Parameters ??= new List<IOpenApiParameter>();
+                    operation.Parameters.Add(new OpenApiParameter
+                    {
+                        Name = IdempotencyFilter.HeaderName,
+                        In = ParameterLocation.Header,
+                        Required = true,
+                        Description = "Unique key to prevent duplicate requests (max 64 chars, TTL: 60 min).",
+                        Schema = new OpenApiSchema
+                        {
+                            Type = JsonSchemaType.String,
+                            MaxLength = 64
+                        }
+                    });
                 }
 
                 return Task.CompletedTask;
