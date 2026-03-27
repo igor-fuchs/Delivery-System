@@ -22,6 +22,11 @@ public sealed class RateLimitOptions
     public const string ProductsPolicyName = "Products";
 
     /// <summary>
+    /// Name of the rate limiting policy applied to order endpoints.
+    /// </summary>
+    public const string OrdersPolicyName = "Orders";
+
+    /// <summary>
     /// Gets the maximum number of requests permitted per <see cref="GlobalWindowMinutes"/> for all endpoints (global limiter).
     /// </summary>
     [Range(1, int.MaxValue)]
@@ -56,4 +61,16 @@ public sealed class RateLimitOptions
     /// </summary>
     [Range(1, int.MaxValue)]
     public required int ProductsWindowMinutes { get; init; }
+
+    /// <summary>
+    /// Gets the maximum number of requests permitted per <see cref="OrdersWindowMinutes"/> for order endpoints, per IP address.
+    /// </summary>
+    [Range(1, int.MaxValue)]
+    public required int OrdersPermitLimit { get; init; }
+
+    /// <summary>
+    /// Gets the window duration in minutes for the orders rate limiter.
+    /// </summary>
+    [Range(1, int.MaxValue)]
+    public required int OrdersWindowMinutes { get; init; }
 }

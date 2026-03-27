@@ -3,9 +3,12 @@ using DeliverySystem.Application.Constants;
 using DeliverySystem.Application.DTOs;
 using DeliverySystem.Application.Exceptions;
 using DeliverySystem.Application.Interfaces;
+using DeliverySystem.Application.Options;
 using DeliverySystem.Domain.Constants;
+using DeliverySystem.Presentation.Filters;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace DeliverySystem.Presentation.Controllers;
 
@@ -16,6 +19,7 @@ namespace DeliverySystem.Presentation.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Authorize(Policy = AppRoles.DefaultPolicy)]
+[EnableRateLimiting(RateLimitOptions.OrdersPolicyName)]
 public sealed class OrdersController : ControllerBase
 {
     private readonly IOrderService _orderService;
@@ -80,6 +84,7 @@ public sealed class OrdersController : ControllerBase
     /// <response code="401">Authentication required.</response>
     /// <response code="404">A referenced product was not found.</response>
     [HttpPost]
+    [IdempotencyFilter]
     [ProducesResponseType(typeof(OrderResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
