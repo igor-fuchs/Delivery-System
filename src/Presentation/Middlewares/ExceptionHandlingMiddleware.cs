@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text.Json;
 using DeliverySystem.Application.Constants;
+using DeliverySystem.Application.DTOs;
 using DeliverySystem.Application.Exceptions;
 
 namespace DeliverySystem.Presentation.Middlewares;
@@ -89,11 +90,6 @@ public sealed class ExceptionHandlingMiddleware
         var json = JsonSerializer.Serialize(response, JsonOptions.Default);
         await context.Response.WriteAsync(json);
     }
-
-    private sealed record ErrorResponse(
-        string Message,
-        string ErrorCode,
-        IReadOnlyDictionary<string, ValidationFieldError[]>? Errors = null);
 
     private static class JsonOptions
     {
