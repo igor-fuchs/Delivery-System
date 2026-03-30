@@ -11,6 +11,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
+using Resend;
 using StackExchange.Redis;
 
 namespace DeliverySystem.Infrastructure;
@@ -52,7 +53,8 @@ public static class DependencyInjection
                 options.User.RequireUniqueEmail = true;
             })
             .AddRoles<IdentityRole<Guid>>()
-            .AddEntityFrameworkStores<ApplicationDbContext>();
+            .AddEntityFrameworkStores<ApplicationDbContext>()
+            .AddDefaultTokenProviders();
 
         // Redis — abortConnect=false prevents startup failures when Redis is temporarily
         // unavailable (e.g. during integration tests or delayed container startup).
@@ -105,6 +107,18 @@ public static class DependencyInjection
             .BindConfiguration(GoogleOptions.SectionName)
             .ValidateDataAnnotations()
             .ValidateOnStart();
+
+        // Resend email service
+        services
+            .AddOptions<ResendOptions>()
+            .BindConfiguration(ResendOptions.SectionName)
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        services.AddHttpClient<ResendClient>();
+        services.Configure<ResendClientOptions>(o => o.ApiToken = configuration[$"{ResendOptions.SectionName}:ApiKey"]!);
+        services.AddTransient<IResend, ResendClient>();
+        services.AddScoped<IEmailService, ResendEmailService>();
 
         if (environment.IsDevelopment())
         {

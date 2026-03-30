@@ -93,4 +93,45 @@ public sealed class AuthController : ControllerBase
         var response = await _authService.GoogleLoginAsync(request);
         return Ok(response);
     }
+
+    /// <summary>
+    /// Initiates a password reset by sending a reset link to the user's email address.
+    /// </summary>
+    /// <param name="request">The payload containing the email, captcha token, and callback URL.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <response code="200">Reset email dispatched (or silently suppressed for unknown addresses).</response>
+    /// <response code="400">Validation errors in the request.</response>
+    /// <response code="401">CAPTCHA verification failed.</response>
+    /// <response code="429">Too many requests. Rate limit exceeded.</response>
+    [HttpPost("forgot-password")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status503ServiceUnavailable)]
+    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request, CancellationToken ct)
+    {
+        await _authService.ForgotPasswordAsync(request, ct);
+        return Ok();
+    }
+
+    /// <summary>
+    /// Resets the user's password using the Identity-generated token received in the reset email.
+    /// </summary>
+    /// <param name="request">The payload containing userId, reset token, new password, and captcha token.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <response code="200">Password reset successfully.</response>
+    /// <response code="400">Validation errors in the request.</response>
+    /// <response code="401">Invalid or expired reset token, unknown userId, or CAPTCHA failed.</response>
+    /// <response code="429">Too many requests. Rate limit exceeded.</response>
+    [HttpPost("reset-password")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
+    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request, CancellationToken ct)
+    {
+        await _authService.ResetPasswordAsync(request, ct);
+        return Ok();
+    }
 }

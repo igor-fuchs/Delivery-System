@@ -32,4 +32,25 @@ public interface IAuthService
     /// <returns>An <see cref="AuthResponse"/> containing the user ID, email, and JWT token.</returns>
     /// <exception cref="UnauthorizedAccessException">Thrown when the Google ID token is invalid or expired.</exception>
     Task<AuthResponse> GoogleLoginAsync(GoogleLoginRequest request);
+
+    /// <summary>
+    /// Initiates a password reset by sending an email with a reset link to the account's address.
+    /// Always returns successfully, even if the email does not correspond to any account,
+    /// to prevent user enumeration attacks.
+    /// </summary>
+    /// <param name="request">The forgot-password payload containing the email, captcha token, and callback URL.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <exception cref="Exceptions.AppUnauthorizedException">Thrown when CAPTCHA verification fails.</exception>
+    /// <exception cref="Exceptions.ServiceUnavailableException">Thrown when the email provider is unavailable.</exception>
+    Task ForgotPasswordAsync(ForgotPasswordRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Resets the password for the specified user using the Identity-generated token.
+    /// </summary>
+    /// <param name="request">The reset-password payload containing userId, token, new password, and captcha token.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <exception cref="Exceptions.AppUnauthorizedException">
+    /// Thrown when the userId is unknown, the token is invalid or expired, or CAPTCHA fails.
+    /// </exception>
+    Task ResetPasswordAsync(ResetPasswordRequest request, CancellationToken cancellationToken = default);
 }
