@@ -12,15 +12,15 @@ public sealed class UpdateProductRequestValidator : AbstractValidator<UpdateProd
     public UpdateProductRequestValidator()
     {
         RuleFor(x => x.Name)
-            .NotEmpty().WithMessage("Name is required.").WithErrorCode(ErrorCodes.ProductNameRequired)
-            .MaximumLength(200).WithMessage("Name cannot exceed 200 characters.").WithErrorCode(ErrorCodes.ProductNameTooLong);
+            .NotEmpty().WithMessage("Name is required.").WithErrorCode(ErrorCodes.ValidationFailed)
+            .MaximumLength(200).WithMessage("Name cannot exceed 200 characters.").WithErrorCode(ErrorCodes.ValidationFailed);
 
         RuleFor(x => x.Description)
-            .NotEmpty().WithMessage("Description is required.").WithErrorCode(ErrorCodes.ProductDescriptionRequired)
-            .MaximumLength(2000).WithMessage("Description cannot exceed 2000 characters.").WithErrorCode(ErrorCodes.ProductDescriptionTooLong);
+            .NotEmpty().WithMessage("Description is required.").WithErrorCode(ErrorCodes.ValidationFailed)
+            .MaximumLength(2000).WithMessage("Description cannot exceed 2000 characters.").WithErrorCode(ErrorCodes.ValidationFailed);
 
         RuleFor(x => x.Price)
-            .GreaterThan(0).WithMessage("Price must be greater than zero.").WithErrorCode(ErrorCodes.ProductPriceTooLow)
-            .LessThan(10000000).WithMessage("Price must be less than 10000000.").WithErrorCode(ErrorCodes.ProductPriceTooHigh);
+            .GreaterThan(0).WithMessage("Price must be greater than zero.").WithErrorCode(ErrorCodes.ValidationFailed)
+            .LessThan(10000000).WithMessage("Price must be less than 10000000.").WithErrorCode(ErrorCodes.ValidationFailed);
     }
 }

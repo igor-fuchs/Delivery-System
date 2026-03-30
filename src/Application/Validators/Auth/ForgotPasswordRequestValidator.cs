@@ -13,18 +13,18 @@ public sealed class ForgotPasswordRequestValidator : AbstractValidator<ForgotPas
     public ForgotPasswordRequestValidator()
     {
         RuleFor(x => x.Email)
-            .NotEmpty().WithMessage("Email is required.").WithErrorCode(ErrorCodes.EmailRequired)
-            .EmailAddress().WithMessage("Invalid email format.").WithErrorCode(ErrorCodes.EmailInvalidFormat)
-            .MaximumLength(254).WithMessage("Email cannot exceed 254 characters.").WithErrorCode(ErrorCodes.EmailTooLong);
+            .NotEmpty().WithMessage("Email is required.").WithErrorCode(ErrorCodes.ValidationFailed)
+            .EmailAddress().WithMessage("Invalid email format.").WithErrorCode(ErrorCodes.ValidationFailed)
+            .MaximumLength(254).WithMessage("Email cannot exceed 254 characters.").WithErrorCode(ErrorCodes.ValidationFailed);
 
         RuleFor(x => x.CaptchaToken)
-            .NotEmpty().WithMessage("Captcha token is required.").WithErrorCode(ErrorCodes.CaptchaTokenRequired)
-            .MaximumLength(2000).WithMessage("Captcha token cannot exceed 2000 characters.").WithErrorCode(ErrorCodes.CaptchaTokenTooLong);
+            .NotEmpty().WithMessage("Captcha token is required.").WithErrorCode(ErrorCodes.ValidationFailed)
+            .MaximumLength(2000).WithMessage("Captcha token cannot exceed 2000 characters.").WithErrorCode(ErrorCodes.ValidationFailed);
 
         RuleFor(x => x.CallbackUrl)
-            .NotEmpty().WithMessage("Callback URL is required.").WithErrorCode(ErrorCodes.CallbackUrlRequired)
-            .MaximumLength(2000).WithMessage("Callback URL cannot exceed 2000 characters.").WithErrorCode(ErrorCodes.CallbackUrlTooLong)
-            .Must(BeAbsoluteHttpOrHttpsUri).WithMessage("Callback URL must be a valid absolute HTTP or HTTPS URL.").WithErrorCode(ErrorCodes.CallbackUrlInvalidFormat);
+            .NotEmpty().WithMessage("Callback URL is required.").WithErrorCode(ErrorCodes.ValidationFailed)
+            .MaximumLength(2000).WithMessage("Callback URL cannot exceed 2000 characters.").WithErrorCode(ErrorCodes.ValidationFailed)
+            .Must(BeAbsoluteHttpOrHttpsUri).WithMessage("Callback URL must be a valid absolute HTTP or HTTPS URL.").WithErrorCode(ErrorCodes.ValidationFailed);
     }
 
     private static bool BeAbsoluteHttpOrHttpsUri(string? url)

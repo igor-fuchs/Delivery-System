@@ -13,6 +13,6 @@ public sealed class GoogleLoginRequestValidator : AbstractValidator<GoogleLoginR
     public GoogleLoginRequestValidator()
     {
         RuleFor(x => x.Token)
-            .NotEmpty().WithMessage("Google ID token is required.").WithErrorCode(ErrorCodes.GoogleTokenRequired);
+            .NotEmpty().WithMessage("Google ID token is required.").WithErrorCode(ErrorCodes.ValidationFailed);
     }
 }
