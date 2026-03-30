@@ -15,13 +15,15 @@ namespace DeliverySystem.Infrastructure.Services;
 /// <summary>
 /// Identity-based implementation of <see cref="IAuthService"/>.
 /// Handles credential-based registration and login via ASP.NET Core Identity,
-/// as well as federated login via Google OAuth2 ID token validation.
+/// as well as federated login via Google OAuth2 ID token validation,
+/// and password reset via Identity token generation.
 /// </summary>
 public sealed class AuthService : IAuthService
 {
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly ITokenService _tokenService;
     private readonly ICaptchaService _captchaService;
+    private readonly IEmailService _emailService;
     private readonly GoogleOptions _googleOptions;
     private readonly ILogger<AuthService> _logger;
 
@@ -31,18 +33,21 @@ public sealed class AuthService : IAuthService
     /// <param name="userManager">The Identity user manager.</param>
     /// <param name="tokenService">Service for JWT generation.</param>
     /// <param name="captchaService">Service for CAPTCHA token verification.</param>
+    /// <param name="emailService">Service for sending transactional emails.</param>
     /// <param name="googleOptions">Google OAuth2 configuration options.</param>
     /// <param name="logger">Logger for security-relevant events.</param>
     public AuthService(
         UserManager<ApplicationUser> userManager,
         ITokenService tokenService,
         ICaptchaService captchaService,
+        IEmailService emailService,
         IOptions<GoogleOptions> googleOptions,
         ILogger<AuthService> logger)
     {
         _userManager = userManager;
         _tokenService = tokenService;
         _captchaService = captchaService;
+        _emailService = emailService;
         _googleOptions = googleOptions.Value;
         _logger = logger;
     }
@@ -181,6 +186,63 @@ public sealed class AuthService : IAuthService
 
         var token = _tokenService.GenerateToken(user.Id, user.Email!, role);
         return new AuthResponse(user.Id.ToString(), user.Email!, token);
+    }
+
+    /// <inheritdoc />
+    /// <exception cref="AppUnauthorizedException">Thrown when CAPTCHA verification fails.</exception>
+    /// <exception cref="ServiceUnavailableException">Thrown when the email provider is unavailable.</exception>
+    public async Task ForgotPasswordAsync(ForgotPasswordRequest request, CancellationToken cancellationToken = default)
+    {
+        await ValidateCaptchaAsync(request.CaptchaToken);
+
+        var email = request.Email.Trim().ToLowerInvariant();
+        var user = await _userManager.FindByEmailAsync(email);
+
+        // Return silently when the email is not registered — this prevents user enumeration.
+        if (user is null)
+        {
+            _logger.LogInformation("Forgot-password request for unknown email (suppressed)");
+            return;
+        }
+
+        var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+
+        // GeneratePasswordResetTokenAsync may produce Base64 chars (+, /, =) that are not safe
+        // in query strings without encoding.
+        var encodedToken = Uri.EscapeDataString(token);
+        var resetUrl = $"{request.CallbackUrl.TrimEnd('/')}?userId={user.Id}&token={encodedToken}";
+
+        await _emailService.SendPasswordResetEmailAsync(user.Email!, user.Email!, resetUrl, cancellationToken);
+
+        _logger.LogInformation("Password reset email dispatched for user {UserId}", user.Id);
+    }
+
+    /// <inheritdoc />
+    /// <exception cref="AppUnauthorizedException">
+    /// Thrown when the userId is unknown, the token is invalid or expired, or CAPTCHA fails.
+    /// </exception>
+    public async Task ResetPasswordAsync(ResetPasswordRequest request, CancellationToken cancellationToken = default)
+    {
+        await ValidateCaptchaAsync(request.CaptchaToken);
+
+        var user = await _userManager.FindByIdAsync(request.UserId);
+        if (user is null)
+        {
+            _logger.LogWarning("Reset-password attempt with unknown userId");
+            throw new AppUnauthorizedException("Invalid or expired password reset token.", ErrorCodes.InvalidResetToken);
+        }
+
+        // Reverse the URL encoding applied during link generation.
+        var decodedToken = Uri.UnescapeDataString(request.Token);
+
+        var result = await _userManager.ResetPasswordAsync(user, decodedToken, request.NewPassword);
+        if (!result.Succeeded)
+        {
+            _logger.LogWarning("Reset-password failed for user {UserId}", user.Id);
+            throw new AppUnauthorizedException("Invalid or expired password reset token.", ErrorCodes.InvalidResetToken);
+        }
+
+        _logger.LogInformation("Password reset succeeded for user {UserId}", user.Id);
     }
 
     /// <summary>
