@@ -17,6 +17,7 @@ public sealed class AuthServiceTests
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly ITokenService _tokenService;
     private readonly ICaptchaService _captchaService;
+    private readonly IEmailService _emailService;
     private readonly ILogger<AuthService> _logger;
     private readonly AuthService _sut;
 
@@ -34,6 +35,7 @@ public sealed class AuthServiceTests
 
         _tokenService = Substitute.For<ITokenService>();
         _captchaService = Substitute.For<ICaptchaService>();
+        _emailService = Substitute.For<IEmailService>();
         _logger = Substitute.For<ILogger<AuthService>>();
 
         // Default: CAPTCHA always passes.
@@ -54,6 +56,7 @@ public sealed class AuthServiceTests
             _userManager,
             _tokenService,
             _captchaService,
+            _emailService,
             Options.Create(TestGoogleOptions),
             _logger);
     }
