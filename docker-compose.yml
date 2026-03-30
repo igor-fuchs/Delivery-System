@@ -18,6 +18,9 @@ services:
       Recaptcha__SecretKey: ${RECAPTCHA__SECRET_KEY}
       AdminSeed__Email: ${ADMIN_SEED__EMAIL}
       AdminSeed__Password: ${ADMIN_SEED__PASSWORD}
+      Google__WebClientId: ${GOOGLE__WEB_CLIENT_ID}
+      Resend__ApiKey: ${RESEND__API_KEY}
+      Resend__FromEmail: ${RESEND__FROM_EMAIL}
     depends_on:
       sqlserver:
         condition: service_healthy
