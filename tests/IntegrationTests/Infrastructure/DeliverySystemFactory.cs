@@ -1,6 +1,7 @@
 using DeliverySystem.Application.Interfaces;
 using DeliverySystem.Infrastructure.Data;
 using DeliverySystem.Infrastructure.Services;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Data.Sqlite;
@@ -16,7 +17,7 @@ namespace DeliverySystem.IntegrationTests.Infrastructure;
 /// <summary>
 /// Custom <see cref="WebApplicationFactory{TEntryPoint}"/> that replaces production services
 /// with test-friendly alternatives: SQLite in-memory database, fake CAPTCHA service,
-/// in-memory distributed cache, and elevated rate limits.
+/// fake email service, in-memory distributed cache, and elevated rate limits.
 /// </summary>
 public sealed class DeliverySystemFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
@@ -27,6 +28,12 @@ public sealed class DeliverySystemFactory : WebApplicationFactory<Program>, IAsy
     /// so individual tests can toggle CAPTCHA pass/fail behavior.
     /// </summary>
     public FakeCaptchaService CaptchaService { get; } = new();
+
+    /// <summary>
+    /// Gets the shared <see cref="TestFakeEmailService"/> instance used by all tests
+    /// to capture sent emails and verify email dispatch behavior.
+    /// </summary>
+    public TestFakeEmailService EmailService { get; } = new();
 
     /// <inheritdoc />
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -77,6 +84,10 @@ public sealed class DeliverySystemFactory : WebApplicationFactory<Program>, IAsy
                 // Admin Seed
                 ["AdminSeed:Email"] = "admin@test.com",
                 ["AdminSeed:Password"] = "Admin@Test1!",
+
+                // Resend (options validation requires values; actual sending is replaced by TestFakeEmailService)
+                ["Resend:ApiKey"] = "test-resend-api-key",
+                ["Resend:FromEmail"] = "noreply@test.com",
             });
         });
 
@@ -111,12 +122,24 @@ public sealed class DeliverySystemFactory : WebApplicationFactory<Program>, IAsy
 
             services.AddSingleton<ICaptchaService>(CaptchaService);
 
+            // Replace email service with test fake that captures sent emails.
+            // RemoveAll handles both direct registration and AddHttpClient<IEmailService,...> registration.
+            services.RemoveAll<IEmailService>();
+
+            services.AddSingleton<IEmailService>(EmailService);
+
             // Replace Redis distributed cache with in-memory implementation
             services.RemoveAll<IDistributedCache>();
             services.AddDistributedMemoryCache();
 
             // Remove Redis connection so rate limiters fall back to in-memory
             services.RemoveAll<IConnectionMultiplexer>();
+
+            // Switch Data Protection to ephemeral (in-memory) keys.
+            // The production setup persists keys to Redis via PersistKeysToStackExchangeRedis,
+            // which fails in tests because Redis is removed above. Ephemeral keys are fine for
+            // tests — they only need to survive the lifetime of a single test run.
+            services.AddDataProtection().UseEphemeralDataProtectionProvider();
         });
     }
 
@@ -145,4 +168,36 @@ public sealed class DeliverySystemFactory : WebApplicationFactory<Program>, IAsy
         await _connection.DisposeAsync();
         await base.DisposeAsync();
     }
+}
+
+/// <summary>
+/// Test-only implementation of <see cref="IEmailService"/> that records all sent emails
+/// in memory so tests can assert on email dispatch behavior.
+/// </summary>
+public sealed class TestFakeEmailService : IEmailService
+{
+    private readonly List<SentEmail> _sentEmails = [];
+
+    /// <summary>Gets the list of emails sent during the current test.</summary>
+    public IReadOnlyList<SentEmail> SentEmails => _sentEmails;
+
+    /// <summary>Clears the captured email list between tests.</summary>
+    public void Reset() => _sentEmails.Clear();
+
+    /// <inheritdoc />
+    public Task SendPasswordResetEmailAsync(
+        string toEmail,
+        string userName,
+        string resetUrl,
+        CancellationToken cancellationToken = default)
+    {
+        _sentEmails.Add(new SentEmail(toEmail, userName, resetUrl));
+        return Task.CompletedTask;
+    }
+
+    /// <summary>Represents a captured outgoing email.</summary>
+    /// <param name="ToEmail">The recipient address.</param>
+    /// <param name="UserName">The display name passed to the email template.</param>
+    /// <param name="ResetUrl">The full password reset URL included in the email.</param>
+    public sealed record SentEmail(string ToEmail, string UserName, string ResetUrl);
 }
