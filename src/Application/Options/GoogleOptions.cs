@@ -16,7 +16,7 @@ public sealed class GoogleOptions
     [Required]
     public required string WebClientId { get; init; }
 
-    /// <summary>Gets the Google OAuth2 client ID for Android applications.</summary>
+    // Gets the Google OAuth2 client ID for Android applications.
     // [Required]
     // public required string AndroidClientId { get; init; }
 }

@@ -105,6 +105,7 @@ public abstract class IntegrationTestBase : IAsyncLifetime
     public Task InitializeAsync()
     {
         Factory.CaptchaService.ShouldPass = true;
+        Factory.EmailService.Reset();
         return Task.CompletedTask;
     }
 

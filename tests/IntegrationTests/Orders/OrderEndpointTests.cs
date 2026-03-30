@@ -1,6 +1,8 @@
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using DeliverySystem.IntegrationTests.Infrastructure;
+using DeliverySystem.Presentation.Filters;
 
 namespace DeliverySystem.IntegrationTests.Orders;
 
@@ -24,11 +26,16 @@ public sealed class OrderEndpointTests : IntegrationTestBase
         var userToken = await GetTokenAsync($"user-order-{Guid.NewGuid()}@test.com", "P@ssw0rd!");
         var userClient = CreateAuthenticatedClient(userToken);
 
-        var response = await userClient.PostAsJsonAsync("/api/orders", new
+        var request = new HttpRequestMessage(HttpMethod.Post, "/api/orders")
         {
-            Description = "My first order",
-            Items = new[] { new { ProductId = product!.Id, Quantity = 2 } }
-        });
+            Content = JsonContent.Create(new
+            {
+                Description = "My first order",
+                Items = new[] { new { ProductId = product!.Id, Quantity = 2 } }
+            })
+        };
+        request.Headers.Add(IdempotencyFilter.HeaderName, Guid.NewGuid().ToString());
+        var response = await userClient.SendAsync(request);
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         var body = await response.Content.ReadFromJsonAsync<OrderResponseDto>();
@@ -42,11 +49,16 @@ public sealed class OrderEndpointTests : IntegrationTestBase
         var userToken = await GetTokenAsync($"user-empty-{Guid.NewGuid()}@test.com", "P@ssw0rd!");
         var userClient = CreateAuthenticatedClient(userToken);
 
-        var response = await userClient.PostAsJsonAsync("/api/orders", new
+        var request = new HttpRequestMessage(HttpMethod.Post, "/api/orders")
         {
-            Description = "Order with no items",
-            Items = Array.Empty<object>()
-        });
+            Content = JsonContent.Create(new
+            {
+                Description = "Order with no items",
+                Items = Array.Empty<object>()
+            })
+        };
+        request.Headers.Add(IdempotencyFilter.HeaderName, Guid.NewGuid().ToString());
+        var response = await userClient.SendAsync(request);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
@@ -57,11 +69,16 @@ public sealed class OrderEndpointTests : IntegrationTestBase
         var userToken = await GetTokenAsync($"user-nodesc-{Guid.NewGuid()}@test.com", "P@ssw0rd!");
         var userClient = CreateAuthenticatedClient(userToken);
 
-        var response = await userClient.PostAsJsonAsync("/api/orders", new
+        var request = new HttpRequestMessage(HttpMethod.Post, "/api/orders")
         {
-            Description = "",
-            Items = new[] { new { ProductId = Guid.NewGuid(), Quantity = 1 } }
-        });
+            Content = JsonContent.Create(new
+            {
+                Description = "",
+                Items = new[] { new { ProductId = Guid.NewGuid(), Quantity = 1 } }
+            })
+        };
+        request.Headers.Add(IdempotencyFilter.HeaderName, Guid.NewGuid().ToString());
+        var response = await userClient.SendAsync(request);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
@@ -72,11 +89,16 @@ public sealed class OrderEndpointTests : IntegrationTestBase
         var userToken = await GetTokenAsync($"user-missing-{Guid.NewGuid()}@test.com", "P@ssw0rd!");
         var userClient = CreateAuthenticatedClient(userToken);
 
-        var response = await userClient.PostAsJsonAsync("/api/orders", new
+        var request = new HttpRequestMessage(HttpMethod.Post, "/api/orders")
         {
-            Description = "Order for non-existent product",
-            Items = new[] { new { ProductId = Guid.NewGuid(), Quantity = 1 } }
-        });
+            Content = JsonContent.Create(new
+            {
+                Description = "Order for non-existent product",
+                Items = new[] { new { ProductId = Guid.NewGuid(), Quantity = 1 } }
+            })
+        };
+        request.Headers.Add(IdempotencyFilter.HeaderName, Guid.NewGuid().ToString());
+        var response = await userClient.SendAsync(request);
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
@@ -91,11 +113,16 @@ public sealed class OrderEndpointTests : IntegrationTestBase
         var userToken = await GetTokenAsync($"user-unavail-{Guid.NewGuid()}@test.com", "P@ssw0rd!");
         var userClient = CreateAuthenticatedClient(userToken);
 
-        var response = await userClient.PostAsJsonAsync("/api/orders", new
+        var request = new HttpRequestMessage(HttpMethod.Post, "/api/orders")
         {
-            Description = "Order for unavailable product",
-            Items = new[] { new { ProductId = product!.Id, Quantity = 1 } }
-        });
+            Content = JsonContent.Create(new
+            {
+                Description = "Order for unavailable product",
+                Items = new[] { new { ProductId = product!.Id, Quantity = 1 } }
+            })
+        };
+        request.Headers.Add(IdempotencyFilter.HeaderName, Guid.NewGuid().ToString());
+        var response = await userClient.SendAsync(request);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
@@ -103,11 +130,16 @@ public sealed class OrderEndpointTests : IntegrationTestBase
     [Fact]
     public async Task Create_Unauthenticated_ReturnsUnauthorized()
     {
-        var response = await Client.PostAsJsonAsync("/api/orders", new
+        var request = new HttpRequestMessage(HttpMethod.Post, "/api/orders")
         {
-            Description = "Desc",
-            Items = new[] { new { ProductId = Guid.NewGuid(), Quantity = 1 } }
-        });
+            Content = JsonContent.Create(new
+            {
+                Description = "Desc",
+                Items = new[] { new { ProductId = Guid.NewGuid(), Quantity = 1 } }
+            })
+        };
+        request.Headers.Add(IdempotencyFilter.HeaderName, Guid.NewGuid().ToString());
+        var response = await Client.SendAsync(request);
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
@@ -312,11 +344,17 @@ public sealed class OrderEndpointTests : IntegrationTestBase
 
     private async Task<OrderResponseDto?> CreateOrderAsync(HttpClient client, Guid productId)
     {
-        var response = await client.PostAsJsonAsync("/api/orders", new
+        var request = new HttpRequestMessage(HttpMethod.Post, "/api/orders")
         {
-            Description = "Test order",
-            Items = new[] { new { ProductId = productId, Quantity = 1 } }
-        });
+            Content = JsonContent.Create(new
+            {
+                Description = "Test order",
+                Items = new[] { new { ProductId = productId, Quantity = 1 } }
+            })
+        };
+        request.Headers.Add(IdempotencyFilter.HeaderName, Guid.NewGuid().ToString());
+
+        var response = await client.SendAsync(request);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<OrderResponseDto>();
     }

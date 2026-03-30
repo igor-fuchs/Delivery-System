@@ -46,6 +46,12 @@ public static class ErrorCodes
     /// <summary>An ASP.NET Identity operation returned one or more errors.</summary>
     public const string IdentityError = "IDENTITY_ERROR";
 
+    /// <summary>The password reset token is invalid or has expired.</summary>
+    public const string InvalidResetToken = "INVALID_RESET_TOKEN";
+
+    /// <summary>The password reset email could not be delivered.</summary>
+    public const string EmailDeliveryFailed = "EMAIL_DELIVERY_FAILED";
+
     // ── Products ──────────────────────────────────────────────────────────────
 
     /// <summary>The requested product was not found.</summary>
@@ -58,6 +64,14 @@ public static class ErrorCodes
 
     /// <summary>The authenticated user is not allowed to access this order.</summary>
     public const string OrderAccessDenied = "ORDER_ACCESS_DENIED";
+
+    // ── Idempotency ─────────────────────────────────────────────────────────
+
+    /// <summary>The Idempotency-Key header is missing from the request.</summary>
+    public const string IdempotencyKeyMissing = "IDEMPOTENCY_KEY_MISSING";
+
+    /// <summary>The Idempotency-Key header exceeds the maximum allowed length.</summary>
+    public const string IdempotencyKeyTooLong = "IDEMPOTENCY_KEY_TOO_LONG";
 
     // ── Validation field codes — Auth ─────────────────────────────────────────
 
@@ -99,6 +113,48 @@ public static class ErrorCodes
 
     /// <summary>Google ID token field is required.</summary>
     public const string GoogleTokenRequired = "GOOGLE_TOKEN_REQUIRED";
+
+    /// <summary>Callback URL field is required.</summary>
+    public const string CallbackUrlRequired = "CALLBACK_URL_REQUIRED";
+
+    /// <summary>Callback URL exceeds the maximum allowed length.</summary>
+    public const string CallbackUrlTooLong = "CALLBACK_URL_TOO_LONG";
+
+    /// <summary>Callback URL format is invalid (must be absolute http/https).</summary>
+    public const string CallbackUrlInvalidFormat = "CALLBACK_URL_INVALID_FORMAT";
+
+    /// <summary>User ID field is required.</summary>
+    public const string UserIdRequired = "USER_ID_REQUIRED";
+
+    /// <summary>User ID exceeds the maximum allowed length.</summary>
+    public const string UserIdTooLong = "USER_ID_TOO_LONG";
+
+    /// <summary>Reset token field is required.</summary>
+    public const string ResetTokenRequired = "RESET_TOKEN_REQUIRED";
+
+    /// <summary>Reset token exceeds the maximum allowed length.</summary>
+    public const string ResetTokenTooLong = "RESET_TOKEN_TOO_LONG";
+
+    /// <summary>New password field is required.</summary>
+    public const string NewPasswordRequired = "NEW_PASSWORD_REQUIRED";
+
+    /// <summary>New password is shorter than the minimum required length.</summary>
+    public const string NewPasswordTooShort = "NEW_PASSWORD_TOO_SHORT";
+
+    /// <summary>New password exceeds the maximum allowed length.</summary>
+    public const string NewPasswordTooLong = "NEW_PASSWORD_TOO_LONG";
+
+    /// <summary>New password must contain at least one uppercase letter.</summary>
+    public const string NewPasswordMissingUppercase = "NEW_PASSWORD_MISSING_UPPERCASE";
+
+    /// <summary>New password must contain at least one lowercase letter.</summary>
+    public const string NewPasswordMissingLowercase = "NEW_PASSWORD_MISSING_LOWERCASE";
+
+    /// <summary>New password must contain at least one digit.</summary>
+    public const string NewPasswordMissingDigit = "NEW_PASSWORD_MISSING_DIGIT";
+
+    /// <summary>New password must contain at least one special character.</summary>
+    public const string NewPasswordMissingSpecial = "NEW_PASSWORD_MISSING_SPECIAL";
 
     // ── Validation field codes — Products ─────────────────────────────────────
 
