@@ -2,12 +2,15 @@
 
 ### ── Auth ──────────────────────────────────────────────────────
 
+@token = {{login.response.body.token}}
+@userId = {{login.response.body.id}}
+
 ### Register a new user
 POST {{baseUrl}}/api/auth/register
 Content-Type: application/json
 
 {
-  "email": "john@example.com",
+  "email": "igorfuchs111@gmail.com",
   "password": "Password123!",
   "captchaToken": "captcha-token"
 }
@@ -18,23 +21,43 @@ POST {{baseUrl}}/api/auth/login
 Content-Type: application/json
 
 {
-  "email": "admin@delivery-system.com",
-  "password": "Admin@Str0ng!Pass",
+  "email": "igorfuchs111@gmail.com",
+  "password": "Password123!",
   "captchaToken": "captcha-token"
 }
 
 ### Login with Google
 # @name googleLogin
-POST {{baseUrl}}/api/auth/google-login
+POST {{baseUrl}}/api/auth/google
 Content-Type: application/json
 
 {
   "token": "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.invalid-signature"
 }
 
-### ── Authenticated request  ─────────────────────────────────────
+### Forgot password (sends reset email)
+# Step 1 — request the reset link. Check your email for the link.
+POST {{baseUrl}}/api/auth/forgot-password
+Content-Type: application/json
 
-@token = {{login.response.body.token}}
+{
+  "email": "igorfuchs111@gmail.com",
+  "captchaToken": "captcha-token",
+  "callbackUrl": "http://localhost:3000/reset-password"
+}
+
+### Reset password
+# Step 2 — copy userId and token from the link received in the email (?userId=...&token=...)
+# and paste them below. The token must be URL-decoded before sending.
+POST {{baseUrl}}/api/auth/reset-password
+Content-Type: application/json
+
+{
+  "userId": "{{userId}}",
+  "token": "CfDJ8KUk7I8uqb5Ojn05bdeQ2wR2UOF%2FhOGo%2Fp421I61DX%2FqUPKzh%2B3k3V2VrpjIMNIoGVgDuSvmm6IPcZfPneCH8MjpjBbW%2B%2FfC%2Fde1Gdvv6KAM%2BZ7VAwwbwJmj4z3cXzkJKR2nnyzBXsSsqasdcnl7QL8ksUqTrLwhU90Y11U7pNn088pi6HE73PAIdPFOoNAwu9xmpT3RJP3ufA7DW7wEJZcGuc2w1P7Uw28piOSIpCzW",
+  "newPassword": "NewPassword123!",
+  "captchaToken": "captcha-token"
+}
 
 ### ── Products ──────────────────────────────────────────────────
 
