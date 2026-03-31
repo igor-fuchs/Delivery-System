@@ -30,12 +30,15 @@ jobs:
         run: dotnet build --configuration Release
 
       - name: Run unit tests
-        run: dotnet test --no-build --configuration Release --logger "trx;LogFileName=test-results.trx"
+        run: dotnet test tests/UnitTests/UnitTests.csproj --no-build --configuration Release --logger "trx;LogFileName=unit-test-results.trx"
+
+      - name: Run integration tests
+        run: dotnet test tests/IntegrationTests/IntegrationTests.csproj --no-build --configuration Release --logger "trx;LogFileName=integration-test-results.trx"
 
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: test-results
-          path: "**/test-results.trx"
+          path: "**/*-test-results.trx"
           retention-days: 7
