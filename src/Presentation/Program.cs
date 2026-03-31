@@ -3,7 +3,6 @@ using DeliverySystem.Application.Options;
 using DeliverySystem.Domain.Constants;
 using DeliverySystem.Infrastructure;
 using DeliverySystem.Infrastructure.Data;
-using DeliverySystem.Infrastructure.Services;
 using DeliverySystem.Presentation.Extensions;
 using DeliverySystem.Presentation.Filters;
 using DeliverySystem.Presentation.Middlewares;

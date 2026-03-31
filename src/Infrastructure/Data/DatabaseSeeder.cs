@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace DeliverySystem.Infrastructure.Services;
+namespace DeliverySystem.Infrastructure.Data;
 
 /// <summary>
 /// Seeds the database with the required roles and the initial admin user.

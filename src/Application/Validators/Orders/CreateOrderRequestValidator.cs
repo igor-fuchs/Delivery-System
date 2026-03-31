@@ -16,20 +16,20 @@ public sealed class CreateOrderRequestValidator : AbstractValidator<CreateOrderR
     public CreateOrderRequestValidator()
     {
         RuleFor(x => x.Description)
-            .NotEmpty().WithMessage("Description is required.").WithErrorCode(ErrorCodes.OrderDescriptionRequired)
-            .MaximumLength(2000).WithMessage("Description cannot exceed 2000 characters.").WithErrorCode(ErrorCodes.OrderDescriptionTooLong);
+            .NotEmpty().WithMessage("Description is required.").WithErrorCode(ErrorCodes.ValidationFailed)
+            .MaximumLength(2000).WithMessage("Description cannot exceed 2000 characters.").WithErrorCode(ErrorCodes.ValidationFailed);
 
         RuleFor(x => x.Items)
-            .NotEmpty().WithMessage("Order must contain at least one item.").WithErrorCode(ErrorCodes.OrderItemsRequired);
+            .NotEmpty().WithMessage("Order must contain at least one item.").WithErrorCode(ErrorCodes.ValidationFailed);
 
         RuleForEach(x => x.Items).ChildRules(item =>
         {
             item.RuleFor(i => i.ProductId)
-                .NotEmpty().WithMessage("Product ID is required.").WithErrorCode(ErrorCodes.OrderItemProductIdRequired);
+                .NotEmpty().WithMessage("Product ID is required.").WithErrorCode(ErrorCodes.ValidationFailed);
 
             item.RuleFor(i => i.Quantity)
-                .GreaterThan(0).WithMessage("Quantity must be greater than zero.").WithErrorCode(ErrorCodes.OrderItemQuantityTooLow)
-                .LessThan(1000).WithMessage("Quantity must be less than 1000.").WithErrorCode(ErrorCodes.OrderItemQuantityTooHigh);
+                .GreaterThan(0).WithMessage("Quantity must be greater than zero.").WithErrorCode(ErrorCodes.ValidationFailed)
+                .LessThan(1000).WithMessage("Quantity must be less than 1000.").WithErrorCode(ErrorCodes.ValidationFailed);
         });
     }
 }

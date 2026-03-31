@@ -1,6 +1,5 @@
 using DeliverySystem.Application.Interfaces;
 using DeliverySystem.Infrastructure.Data;
-using DeliverySystem.Infrastructure.Services;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
