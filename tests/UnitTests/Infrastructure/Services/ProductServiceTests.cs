@@ -26,7 +26,7 @@ public sealed class ProductServiceTests : IAsyncDisposable
         _context = new ApplicationDbContext(options);
         _context.Database.EnsureCreated();
 
-        _sut = new ProductService(_context);
+        _sut = new ProductService(_context, new CleanerService());
     }
 
     public async ValueTask DisposeAsync()
