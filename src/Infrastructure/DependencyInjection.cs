@@ -83,6 +83,7 @@ public static class DependencyInjection
             .SetApplicationName("DeliverySystem");
 
         // Services
+        services.AddSingleton<ICleanerService, CleanerService>();
         services.AddSingleton<ITokenService, TokenService>();
         services.AddScoped<IAuthService, AuthService>();
 

@@ -15,14 +15,17 @@ namespace DeliverySystem.Infrastructure.Services;
 public sealed class OrderService : IOrderService
 {
     private readonly ApplicationDbContext _context;
+    private readonly ICleanerService _cleaner;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="OrderService"/> class.
     /// </summary>
     /// <param name="context">The database context.</param>
-    public OrderService(ApplicationDbContext context)
+    /// <param name="sanitizer">The HTML input sanitizer.</param>
+    public OrderService(ApplicationDbContext context, ICleanerService sanitizer)
     {
         _context = context;
+        _cleaner = sanitizer;
     }
 
     /// <inheritdoc />
@@ -67,7 +70,7 @@ public sealed class OrderService : IOrderService
         {
             Id = Guid.NewGuid(),
             CustomerId = customerId,
-            Description = request.Description,
+            Description = _cleaner.Sanitize(request.Description),
             Status = OrderStatus.Pending,
             TotalAmount = items.Sum(i => i.UnitPrice * i.Quantity),
             CreatedAt = DateTime.UtcNow,
