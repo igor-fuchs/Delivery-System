@@ -19,6 +19,9 @@ public sealed class UpdateProductRequestValidator : AbstractValidator<UpdateProd
             .NotEmpty().WithMessage("Description is required.").WithErrorCode(ErrorCodes.ValidationFailed)
             .MaximumLength(2000).WithMessage("Description cannot exceed 2000 characters.").WithErrorCode(ErrorCodes.ValidationFailed);
 
+        RuleFor(x => x.Stock)
+            .NotNull().WithMessage("Stock is required.").WithErrorCode(ErrorCodes.ValidationFailed);
+
         RuleFor(x => x.Price)
             .GreaterThan(0).WithMessage("Price must be greater than zero.").WithErrorCode(ErrorCodes.ValidationFailed)
             .LessThan(10000000).WithMessage("Price must be less than 10000000.").WithErrorCode(ErrorCodes.ValidationFailed);
