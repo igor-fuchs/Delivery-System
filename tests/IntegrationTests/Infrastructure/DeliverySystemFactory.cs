@@ -46,8 +46,7 @@ public sealed class DeliverySystemFactory : WebApplicationFactory<Program>, IAsy
         builder.UseSetting("Jwt:Issuer", "DeliverySystem.Tests");
         builder.UseSetting("Jwt:Audience", "DeliverySystem.Tests");
         builder.UseSetting("Jwt:ExpirationMinutes", "60");
-        builder.UseSetting("Cors:AuthAllowedOrigins:0", "http://localhost");
-        builder.UseSetting("Cors:AuthAllowedMethods:0", "POST");
+        builder.UseSetting("Cors:AllowedOrigins:0", "http://localhost");
 
         // Redis — UseSetting so options validation passes during startup.
         // The actual connection is replaced in ConfigureServices below.

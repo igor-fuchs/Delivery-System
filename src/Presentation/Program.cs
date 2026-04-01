@@ -105,10 +105,10 @@ var corsOption = builder.Configuration.GetSection(CorsOptions.SectionName).Get<C
 
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy(CorsOptions.AuthPolicyName, policy =>
+    options.AddPolicy(CorsOptions.DefaultPolicyName, policy =>
     {
-        policy.WithOrigins(corsOption.AuthAllowedOrigins)
-              .WithMethods(corsOption.AuthAllowedMethods)
+        policy.WithOrigins(corsOption.AllowedOrigins)
+              .AllowAnyMethod()
               .AllowAnyHeader();
     });
 });
@@ -136,7 +136,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseRateLimiter();
-app.UseCors(CorsOptions.AuthPolicyName);
+app.UseCors(CorsOptions.DefaultPolicyName);
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
