@@ -29,7 +29,7 @@ public sealed class OrderServiceTests : IAsyncDisposable
         _context = new ApplicationDbContext(options);
         _context.Database.EnsureCreated();
 
-        _sut = new OrderService(_context);
+        _sut = new OrderService(_context, new CleanerService());
     }
 
     public async ValueTask DisposeAsync()
