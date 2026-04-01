@@ -57,8 +57,8 @@ public sealed class ProductService : IProductService
         var product = new Product
         {
             Id = Guid.NewGuid(),
-            Name = _cleaner.Sanitize(request.Name),
-            Description = _cleaner.Sanitize(request.Description),
+            Name = _cleaner.Clean(request.Name),
+            Description = _cleaner.Clean(request.Description),
             Stock = request.Stock,
             Price = request.Price,
             CreatedAt = DateTime.UtcNow
@@ -78,8 +78,8 @@ public sealed class ProductService : IProductService
         if (product is null)
             throw new NotFoundException($"Product '{id}' was not found.", ErrorCodes.ProductNotFound);
 
-        product.Name = _cleaner.Sanitize(request.Name);
-        product.Description = _cleaner.Sanitize(request.Description);
+        product.Name = _cleaner.Clean(request.Name);
+        product.Description = _cleaner.Clean(request.Description);
         product.Stock = request.Stock;
         product.Price = request.Price;
 

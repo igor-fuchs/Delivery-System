@@ -1,11 +1,14 @@
 using DeliverySystem.Application.Interfaces;
 using Ganss.Xss;
+using System.Text;
 
 namespace DeliverySystem.Infrastructure.Services;
 
 /// <summary>
-/// Strips all HTML tags from user input using the Ganss.Xss HtmlSanitizer library,
-/// configured with empty allowlists to produce plain text output.
+/// Cleans and normalizes user input using the Ganss.Xss HtmlSanitizer library.
+/// All HTML tags and their inner content are stripped; whitespace is trimmed;
+/// and Unicode characters are normalized to Form C (Composed) to produce
+/// consistent plain-text values safe for database storage.
 /// </summary>
 public sealed class CleanerService : ICleanerService
 {
@@ -13,7 +16,8 @@ public sealed class CleanerService : ICleanerService
 
     /// <summary>
     /// Initializes the sanitizer with empty allowlists so that all HTML tags,
-    /// attributes, CSS properties, and URI schemes are removed.
+    /// attributes, CSS properties, and URI schemes — including their inner content —
+    /// are fully removed.
     /// </summary>
     public CleanerService()
     {
@@ -31,7 +35,22 @@ public sealed class CleanerService : ICleanerService
         if (string.IsNullOrWhiteSpace(input))
             return string.Empty;
 
-        var sanitized = _sanitizer.Sanitize(input);
-        return sanitized.Trim();
+        return _sanitizer.Sanitize(input).Trim();
+    }
+
+    /// <inheritdoc />
+    public string Normalize(string? input)
+    {
+        if (string.IsNullOrWhiteSpace(input))
+            return string.Empty;
+
+        return input.Normalize(NormalizationForm.FormC).Trim();
+    }
+
+    /// <inheritdoc />
+    public string Clean(string? input)
+    {
+        var sanitized = Sanitize(input);
+        return Normalize(sanitized);
     }
 }

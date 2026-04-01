@@ -70,7 +70,7 @@ public sealed class OrderService : IOrderService
         {
             Id = Guid.NewGuid(),
             CustomerId = customerId,
-            Description = _cleaner.Sanitize(request.Description),
+            Description = _cleaner.Clean(request.Description),
             Status = OrderStatus.Pending,
             TotalAmount = items.Sum(i => i.UnitPrice * i.Quantity),
             CreatedAt = DateTime.UtcNow,
