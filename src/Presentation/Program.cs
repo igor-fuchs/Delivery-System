@@ -1,4 +1,7 @@
 using System.Text;
+using DeliverySystem.Application.Constants;
+using DeliverySystem.Application.DTOs;
+using DeliverySystem.Application.Exceptions;
 using DeliverySystem.Application.Options;
 using DeliverySystem.Domain.Constants;
 using DeliverySystem.Infrastructure;
@@ -8,6 +11,7 @@ using DeliverySystem.Presentation.Filters;
 using DeliverySystem.Presentation.Middlewares;
 using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
@@ -29,6 +33,40 @@ builder.Services
     .AddControllers(options =>
     {
         options.Filters.Add<ValidationFilter>();
+    })
+    .ConfigureApiBehaviorOptions(options =>
+    {
+        // Override the default ProblemDetails response from [ApiController] model binding failures.
+        // The default leaks internal type names, JSON paths, and trace IDs.
+        options.InvalidModelStateResponseFactory = context =>
+        {
+            var errors = context.ModelState
+                .Where(kvp => kvp.Value?.Errors.Count > 0)
+                .ToDictionary(
+                    kvp => SanitizeFieldKey(kvp.Key),
+                    kvp => kvp.Value!.Errors
+                        .Select(e => new ValidationFieldError(
+                            ErrorCodes.ValidationFailed,
+                            SanitizeErrorMessage(e.ErrorMessage)))
+                        .ToArray()
+                );
+
+            var response = new ErrorResponse(
+                "Validation failed.",
+                ErrorCodes.ValidationFailed,
+                errors);
+
+            return new BadRequestObjectResult(response);
+        };
+
+        static string SanitizeFieldKey(string key) =>
+            key.TrimStart('$', '.');
+
+        // JSON deserialization errors expose internal type names and path details — replace with a generic message.
+        static string SanitizeErrorMessage(string message) =>
+            message.Contains("could not be converted") || message.Contains("Path:")
+                ? "The value provided is invalid."
+                : message;
     });
 
 var jwtOptions = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()!;
