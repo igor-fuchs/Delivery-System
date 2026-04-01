@@ -11,14 +11,10 @@ public sealed class CorsOptions
     /// <summary>Configuration section name.</summary>
     public const string SectionName = "Cors";
 
-    /// <summary>Name of the registered CORS policy applied in the middleware pipeline.</summary>
-    public const string AuthPolicyName = "AuthCorsPolicy";
+    /// <summary>Name of the global CORS policy applied in the middleware pipeline.</summary>
+    public const string DefaultPolicyName = "CorsPolicy";
 
     /// <summary>Gets the list of origins permitted to make cross-origin requests.</summary>
     [Required]
-    public required string[] AuthAllowedOrigins { get; init; }
-
-    /// <summary>Gets the list of HTTP methods allowed in cross-origin requests.</summary>
-    [Required]
-    public required string[] AuthAllowedMethods { get; init; }
+    public required string[] AllowedOrigins { get; init; }
 }
