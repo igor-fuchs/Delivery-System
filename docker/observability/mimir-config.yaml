@@ -1,0 +1,38 @@
+# Single-process mode — all Mimir components run in one process.
+# Suitable for development; production should use microservices mode.
+target: all
+multitenancy_enabled: false
+
+server:
+  http_listen_port: 9009
+
+common:
+  storage:
+    backend: filesystem
+    filesystem:
+      dir: /data/mimir
+
+blocks_storage:
+  tsdb:
+    dir: /data/mimir/tsdb
+
+compactor:
+  data_dir: /data/mimir/compactor
+
+distributor:
+  ring:
+    kvstore:
+      store: memberlist
+
+ingester:
+  ring:
+    kvstore:
+      store: memberlist
+    replication_factor: 1
+
+store_gateway:
+  sharding_ring:
+    replication_factor: 1
+
+memberlist:
+  join_members: []

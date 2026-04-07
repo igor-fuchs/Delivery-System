@@ -1,0 +1,64 @@
+apiVersion: 1
+
+datasources:
+  - name: Loki
+    type: loki
+    uid: loki
+    url: http://loki:3100
+    access: proxy
+    isDefault: false
+    jsonData:
+      derivedFields:
+        # Extracts the TraceId field from structured log records and links to Tempo,
+        # enabling one-click navigation from a log line to its corresponding trace.
+        - matcherRegex: '"TraceId":"([a-fA-F0-9]{32})"'
+          name: TraceID
+          url: "${__value.raw}"
+          datasourceUid: tempo
+          urlDisplayLabel: "View Trace in Tempo"
+
+  - name: Tempo
+    type: tempo
+    uid: tempo
+    url: http://tempo:3200
+    access: proxy
+    isDefault: false
+    jsonData:
+      tracesToLogsV2:
+        datasourceUid: loki
+        spanStartTimeShift: "-1m"
+        spanEndTimeShift: "1m"
+        tags:
+          - key: service.name
+            value: service_name
+        filterByTraceID: true
+        filterBySpanID: false
+      serviceMap:
+        datasourceUid: prometheus
+      nodeGraph:
+        enabled: true
+      search:
+        hide: false
+
+  - name: Prometheus
+    type: prometheus
+    uid: prometheus
+    url: http://prometheus:9090
+    access: proxy
+    isDefault: true
+    jsonData:
+      exemplarTraceIdDestinations:
+        - name: traceID
+          datasourceUid: tempo
+
+  - name: Mimir
+    type: prometheus
+    uid: mimir
+    url: http://mimir:9009/prometheus
+    access: proxy
+    isDefault: false
+    jsonData:
+      prometheusType: Mimir
+      exemplarTraceIdDestinations:
+        - name: traceID
+          datasourceUid: tempo

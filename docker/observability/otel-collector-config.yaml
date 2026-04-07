@@ -1,0 +1,66 @@
+file_format: yaml
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 400
+    spike_limit_mib: 128
+
+  batch:
+    timeout: 5s
+    send_batch_size: 8192
+
+  # Defense-in-depth: redact attribute values matching PII patterns.
+  # Primary PII prevention is at call sites in the application; this is a last-resort backstop.
+  redaction:
+    allow_all_keys: true
+    blocked_values:
+      - "(?i)password"
+      - "(?i)secret"
+      - "(?i)apikey"
+
+exporters:
+  # Traces → Tempo (OTLP gRPC)
+  otlp/tempo:
+    endpoint: tempo:9095
+    tls:
+      insecure: true
+
+  # Logs → Loki
+  loki:
+    endpoint: http://loki:3100/loki/api/v1/push
+
+  # Metrics → Prometheus (remote write)
+  prometheusremotewrite:
+    endpoint: http://prometheus:9090/api/v1/write
+    tls:
+      insecure: true
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, redaction, batch]
+      exporters: [otlp/tempo]
+
+    logs:
+      receivers: [otlp]
+      processors: [memory_limiter, redaction, batch]
+      exporters: [loki]
+
+    metrics:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [prometheusremotewrite]
+
+  telemetry:
+    logs:
+      level: warn
