@@ -101,3 +101,4 @@ When asked to commit changes:
 3. Use `git add -p` or `git add <file>` for selective staging
 4. Make one commit per group using conventional commits
 5. Never mix, for example feat + fix in the same commit
+6. Never add Co-Authored-By lines to commit messages
