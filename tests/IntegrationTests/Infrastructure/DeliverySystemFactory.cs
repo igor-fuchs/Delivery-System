@@ -65,6 +65,13 @@ public sealed class DeliverySystemFactory : WebApplicationFactory<Program>, IAsy
         builder.UseSetting("RateLimit:OrdersPermitLimit", "10000");
         builder.UseSetting("RateLimit:OrdersWindowMinutes", "1");
 
+        // OpenTelemetry — options validation requires this during startup.
+        builder.UseSetting("OpenTelemetry:OtlpEndpoint", "http://localhost:4317");
+
+        // Grafana — options validation requires these during startup.
+        builder.UseSetting("Grafana:AdminUser", "test-admin");
+        builder.UseSetting("Grafana:AdminPassword", "Test@Password123");
+
         builder.ConfigureAppConfiguration((_, config) =>
         {
             config.AddInMemoryCollection(new Dictionary<string, string?>
