@@ -2,11 +2,9 @@
 
 Delivery System is a backend API designed to power online ordering experiences for small food businesses such as pizzerias and snack bars.
 
-The goal is to provide a simple and reliable way for customers to place orders through web or mobile applications, while giving business owners full control over order management.
+Customers can browse products, create orders, and track their status in real time. Administrators can manage the menu, update order statuses, and oversee the entire operation through role-based permissions.
 
-Customers can browse products, create orders, and track their status in real time. On the other side, administrators can manage the menu, update order statuses, and oversee the entire operation through role-based permissions.
-
-The system focuses on real-world concerns such as authentication, security, idempotent order creation, and scalability — making it a solid foundation for modern delivery platforms.
+The system focuses on real-world concerns such as authentication, security, idempotent order creation, full observability, and scalability — making it a solid foundation for modern delivery platforms.
 
 **Front-end:** [igor-fuchs/Delivery-Page](https://github.com/igor-fuchs/Delivery-Page)
 
@@ -25,6 +23,7 @@ The system focuses on real-world concerns such as authentication, security, idem
 | Containerization | Docker + Docker Compose |
 | Testing | xUnit, NSubstitute, WebApplicationFactory |
 | API Documentation | Swagger / OpenAPI |
+| Observability | OpenTelemetry + Loki + Tempo + Prometheus + Mimir + Grafana |
 
 ---
 
@@ -39,9 +38,15 @@ cp .env.example .env
 docker compose up --build
 ```
 
-The API will be available at `http://localhost:8080` and Swagger at `http://localhost:8080/swagger`.
+| Service | URL |
+|---|---|
+| API | `http://localhost:8080` |
+| Swagger | `http://localhost:8080/swagger` |
+| Grafana | `http://localhost:3000` |
 
-### Locally
+> In Development mode, EF Core migrations are applied automatically on startup.
+
+### Locally (without observability stack)
 
 ```bash
 cp .env.example .env
@@ -50,13 +55,13 @@ cp .env.example .env
 dotnet run --project src/Presentation/Presentation.csproj
 ```
 
-> In Development mode, EF Core migrations are applied automatically on startup.
-
 ---
 
 ## Configuration
 
 Copy `.env.example` to `.env` and fill in the variables:
+
+### Application
 
 | Variable | Description |
 |---|---|
@@ -69,8 +74,16 @@ Copy `.env.example` to `.env` and fill in the variables:
 | `RECAPTCHA__SECRET_KEY` | Google reCAPTCHA v3 secret key (production) |
 | `GOOGLE__WEBCLIENTID` | OAuth2 Client ID for web clients |
 | `REDIS__CONNECTION_STRING` | Redis connection string (e.g. `redis:6379`) |
-| `RESEND__API_KEY` | Resend API key for sending password reset emails (production) |
-| `RESEND__FROM_EMAIL` | Sender address shown to recipients (must be on a verified Resend domain) |
+| `RESEND__API_KEY` | Resend API key for sending password reset emails |
+| `RESEND__FROM_EMAIL` | Sender address (must be on a verified Resend domain) |
+
+### Observability
+
+| Variable | Description |
+|---|---|
+| `OPENTELEMETRY__OTLP_ENDPOINT` | OTel Collector OTLP gRPC endpoint (default: `http://otel-collector:4317`) |
+| `GRAFANA__ADMIN_USER` | Grafana admin username (min 3 chars) |
+| `GRAFANA__ADMIN_PASSWORD` | Grafana admin password (min 8 chars) |
 
 ---
 
@@ -87,8 +100,30 @@ Infrastructure  →  Application  →  Domain
 |---|---|
 | **Domain** | Entities, enums, constants, domain exceptions |
 | **Application** | Service interfaces, DTOs, validators, options, application exceptions |
-| **Infrastructure** | EF Core, ASP.NET Identity, JWT, reCAPTCHA, Google OAuth2 |
+| **Infrastructure** | EF Core, ASP.NET Identity, JWT, reCAPTCHA, Google OAuth2, telemetry |
 | **Presentation** | Controllers, middlewares, filters, Program.cs |
+
+---
+
+## Observability
+
+The full LGTM stack ships with the project and starts automatically with `docker compose up`.
+
+```
+API  ──OTLP gRPC──►  OTel Collector
+                         ├── Logs    ──►  Loki   :3100
+                         ├── Traces  ──►  Tempo  :3200
+                         └── Metrics ──►  Prometheus :9090  ──remote_write──►  Mimir :19009
+                                                                                    ▲
+Grafana :3000  ◄── queries ─────────────────────────────────────────────────────────┘
+```
+
+- **W3C Trace Context** is propagated automatically on all incoming and outgoing HTTP requests.
+- **PII protection**: emails, passwords, tokens, and path parameters are never written to logs. Route templates (`/api/orders/{id}`) are used instead of actual paths.
+- **Grafana datasources** (Loki, Tempo, Prometheus, Mimir) are auto-provisioned on first boot — no manual setup required.
+- Logs include a `TraceId` field that Grafana uses to link directly from a log line to its trace in Tempo.
+
+See [docs/guides/grafana-setup.md](docs/guides/grafana-setup.md) for login instructions, LogQL/PromQL examples, and recommended dashboards.
 
 ---
 
@@ -142,7 +177,7 @@ dotnet test tests/IntegrationTests/IntegrationTests.csproj
 dotnet test --filter "FullyQualifiedName~AuthServiceTests"
 ```
 
-Integration tests use SQLite in-memory (replacing SQL Server) and `FakeCaptchaService`.
+Integration tests use SQLite in-memory (replacing SQL Server) and `FakeCaptchaService`. The full observability stack is not required — the OTel SDK exports silently when the collector is unreachable.
 
 ---
 
@@ -151,17 +186,20 @@ Integration tests use SQLite in-memory (replacing SQL Server) and `FakeCaptchaSe
 The `docs/` folder is organized into two sections:
 
 ### `docs/guides/` — Setup guides
-Step-by-step instructions for configuring external services and running project tooling. Intended for developers setting up the project for the first time.
+
+Step-by-step instructions for configuring external services and running project tooling.
 
 | Guide | Description |
 |---|---|
+| [Grafana observability](docs/guides/grafana-setup.md) | Full setup guide: login, datasources, LogQL/PromQL, trace-log correlation, dashboards |
 | [Database migrations](docs/guides/migration-database.md) | How to create and apply EF Core migrations |
 | [Google reCAPTCHA v3](docs/guides/recaptcha.md) | How to obtain and configure reCAPTCHA keys |
 | [Google OAuth 2.0](docs/guides/google-oauth2-setup.md) | How to create OAuth2 credentials for web and Android clients |
 | [Resend email](docs/guides/resend-setup.md) | How to generate a Resend API key and configure the email sender |
 
 ### `docs/project/` — Project reference
-Technical reference documents describing how the project is built and behaves. Useful for understanding the system before making changes.
+
+Technical reference documents describing how the project is built and behaves.
 
 | Document | Description |
 |---|---|

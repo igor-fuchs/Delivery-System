@@ -1,4 +1,4 @@
-# Observability Guide — Delivery System
+# Grafana Observability Setup Guide
 
 This guide covers the full observability stack (OpenTelemetry → Loki / Tempo / Prometheus / Mimir → Grafana) and walks through every step from first launch to using dashboards.
 
@@ -10,7 +10,7 @@ This guide covers the full observability stack (OpenTelemetry → Loki / Tempo /
 API  ──OTLP gRPC──►  OTel Collector
                          ├── Logs    ──►  Loki   :3100
                          ├── Traces  ──►  Tempo  :3200
-                         └── Metrics ──►  Prometheus :9090  ──remote_write──►  Mimir :9009
+                         └── Metrics ──►  Prometheus :9090  ──remote_write──►  Mimir :19009
                                                                                     ▲
 Grafana :3000  ◄── queries ─────────────────────────────────────────────────────────┘
                            ◄── queries Loki, Tempo
@@ -24,6 +24,9 @@ All datasources are **auto-provisioned** — Grafana connects to every backend o
 
 - Docker + Docker Compose installed.
 - Project `.env` configured (see step 2).
+- Ports free: `3000`, `3100`, `3200`, `4317`, `4318`, `8080`, `8888`, `9090`, `19009`.
+
+> **Windows note:** Port `9009` is commonly reserved by Hyper-V on Windows 11, so Mimir is mapped to host port `19009` instead. Container-to-container communication still uses internal port `9009`.
 
 ---
 
@@ -35,7 +38,7 @@ Copy the example env file and fill in your values:
 cp .env.example .env
 ```
 
-Open `.env` and set the Grafana credentials — find the section at the bottom:
+Open `.env` and set the Grafana credentials at the bottom:
 
 ```env
 # --- Grafana Admin Credentials --------------------------------
@@ -43,9 +46,7 @@ GRAFANA__ADMIN_USER=admin          # change to your preferred username
 GRAFANA__ADMIN_PASSWORD=admin      # change to a strong password (min 8 chars)
 ```
 
-> **Security note:** The values in `.env` are validated at API startup via `GrafanaOptions`
-> (`[Required]`, `StringLength(8–255)` on password). Docker Compose uses these same values to
-> configure Grafana's `GF_SECURITY_ADMIN_USER` and `GF_SECURITY_ADMIN_PASSWORD`.
+> The API validates these values at startup via `GrafanaOptions` (`[Required]`, `StringLength(8–255)` on password). Docker Compose reads them to configure `GF_SECURITY_ADMIN_USER` and `GF_SECURITY_ADMIN_PASSWORD`.
 
 ---
 
@@ -61,15 +62,16 @@ Wait for all containers to become healthy. You can monitor progress:
 docker compose ps
 ```
 
-Expected healthy containers:
-| Container | Port | Ready when |
+Expected containers and their readiness:
+
+| Container | Host Port | Ready when |
 |---|---|---|
 | `delivery-system-api` | 8080 | Logs show `Application started` |
 | `delivery-otel-collector` | 4317, 4318, 8888 | Starts within ~5s |
 | `delivery-loki` | 3100 | Starts within ~5s |
 | `delivery-tempo` | 3200, 9095 | Starts within ~10s |
 | `delivery-prometheus` | 9090 | Starts within ~5s |
-| `delivery-mimir` | 9009 | Healthcheck passes (~30s) |
+| `delivery-mimir` | **19009** | Healthcheck passes (~30s) |
 | `delivery-grafana` | 3000 | Starts within ~15s |
 
 ---
@@ -81,15 +83,14 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 - **Username:** value of `GRAFANA__ADMIN_USER` from your `.env`
 - **Password:** value of `GRAFANA__ADMIN_PASSWORD` from your `.env`
 
-On first login Grafana will prompt you to change the default password if you left it as `admin`.
-You can skip this or set a new one — it only affects the UI, not the `.env` file.
+On first login Grafana will prompt you to change the default password if you left it as `admin`. You can skip this or set a new one — it only affects the UI session, not the `.env` file.
 
 ---
 
 ## 5. Verify datasources
 
 All four datasources are auto-provisioned from
-[`docker/observability/grafana/provisioning/datasources/datasources.yaml`](../docker/observability/grafana/provisioning/datasources/datasources.yaml).
+[`docker/observability/grafana/provisioning/datasources/datasources.yaml`](../../docker/observability/grafana/provisioning/datasources/datasources.yaml).
 
 Confirm they are all working:
 
@@ -114,15 +115,15 @@ If any datasource shows an error, wait 30 more seconds and retry (Mimir takes th
 # Only errors
 {service_name="delivery-system-api"} | json | level="error"
 
-# Filter by route
+# Filter by route template
 {service_name="delivery-system-api"} | json | RoutePattern="/api/auth/login"
 
-# Search for a specific status code
+# Search by HTTP status code
 {service_name="delivery-system-api"} | json | StatusCode="401"
 ```
 
 > **PII guarantee:** Emails, passwords, tokens, and GUIDs from URL paths are never present in logs.
-> The `RequestTracingMiddleware` logs route templates (`/api/orders/{id}`), not actual paths.
+> `RequestTracingMiddleware` logs route templates (`/api/orders/{id}`), not actual paths.
 
 ---
 
@@ -150,13 +151,13 @@ curl -X POST http://localhost:8080/api/auth/login \
   -d '{"email":"test@example.com","password":"Test@123","captchaToken":"fake"}'
 ```
 
-In Tempo, search for trace ID `0af7651916cd43dd8448eb211c80319c` — you will see the API span as a **child** of your injected parent.
+In Tempo, search for trace ID `0af7651916cd43dd8448eb211c80319c` — the API span will appear as a **child** of your injected parent.
 
 ---
 
 ## 8. Explore metrics (Prometheus / Mimir)
 
-1. Go to **Explore** → select **Prometheus** (real-time) or **Mimir** (long-term)
+1. Go to **Explore** → select **Prometheus** (real-time) or **Mimir** (long-term storage)
 2. Useful PromQL queries:
 
 ```promql
@@ -176,7 +177,7 @@ rate(http_server_request_duration_seconds_count{http_response_status_code=~"4..|
 # .NET runtime: GC collections
 rate(process_runtime_dotnet_gc_collections_total[5m])
 
-# .NET runtime: working set memory (bytes)
+# .NET runtime: heap size (bytes)
 process_runtime_dotnet_gc_heap_size_bytes
 ```
 
@@ -189,68 +190,70 @@ Grafana links traces and logs automatically using the `TraceId` field.
 ### From a log line → trace
 
 1. In **Explore → Loki**, run any query
-2. Expand a log line
-3. If the log was emitted during an active HTTP request, a **"View Trace in Tempo"** button appears
-4. Click it to jump directly to the full trace in Tempo
+2. Expand a log line that was emitted during an HTTP request
+3. A **"View Trace in Tempo"** button appears — click to jump directly to the trace
 
 ### From a trace span → logs
 
 1. In **Explore → Tempo**, open any trace
-2. Click a span
-3. In the span details panel, click **"Logs for this span"**
-4. Grafana opens Loki filtered to `±1 minute` around that span and the matching `TraceId`
+2. Click a span → in the detail panel click **"Logs for this span"**
+3. Grafana opens Loki filtered to `±1 minute` around that span with the matching `TraceId`
 
 ### From a metric exemplar → trace
 
 1. In **Explore → Prometheus**, run a histogram query
-2. Enable **Exemplars** toggle (top right of the graph)
-3. Dots on the graph represent individual requests — click one to jump to the trace in Tempo
+2. Enable the **Exemplars** toggle (top right of the graph)
+3. Dots on the graph represent individual requests — click one to jump to its trace in Tempo
 
 ---
 
 ## 10. Recommended dashboards
 
-Import these from the Grafana dashboard library (**Home → Dashboards → Import**):
+Import these from the Grafana dashboard library (**Home → Dashboards → New → Import**):
 
-| Dashboard | ID | Purpose |
+| Dashboard | ID | Datasource |
 |---|---|---|
-| ASP.NET Core | `19925` | HTTP request rates, errors, durations |
-| .NET Runtime | `19924` | GC, heap, thread pool, CPU |
-| OpenTelemetry Collector | `15983` | Collector throughput and pipeline health |
-| Loki Logs | `13639` | Log volume, error rates by label |
+| ASP.NET Core | `19925` | Prometheus |
+| .NET Runtime | `19924` | Prometheus |
+| OpenTelemetry Collector | `15983` | Prometheus |
+| Loki Logs | `13639` | Loki |
 
 **How to import:**
-1. Go to **Home → Dashboards → New → Import**
-2. Enter the dashboard ID above
-3. Select the matching datasource (Prometheus for metric dashboards, Loki for log dashboards)
-4. Click **Import**
+1. **Home → Dashboards → New → Import**
+2. Enter the ID above → click **Load**
+3. Select the matching datasource → click **Import**
 
 ---
 
 ## 11. Troubleshooting
 
 ### Grafana shows "Data source not found"
-Wait 30–60 seconds for all containers to finish initializing, then reload the page. Mimir takes the longest.
+Wait 30–60 seconds for all containers to finish initializing (Mimir is slowest), then reload.
 
-### No logs appearing in Loki
-Check that the API container started and is sending telemetry:
+### No logs in Loki
 ```bash
-docker logs delivery-system-api | grep -i "otel\|telemetry\|export"
+docker logs delivery-system-api 2>&1 | grep -i "otel\|otlp\|export"
 docker logs delivery-otel-collector
 ```
 
 ### No traces in Tempo
-Verify the Collector is receiving data:
+Check that the Collector is receiving spans:
 ```bash
-# Collector self-metrics — look for received_spans > 0
 curl http://localhost:8888/metrics | grep otelcol_receiver_accepted_spans
 ```
 
-### Mimir healthcheck failing
+### Mimir not ready
 ```bash
-curl http://localhost:9009/ready
+curl http://localhost:19009/ready
 ```
-If it returns anything other than `ready`, wait for memberlist ring to stabilize (~60s on first boot).
+Returns `ready` when the ring has stabilized (~30–60s on first boot).
+
+### Port conflict on Windows (Mimir)
+If `19009` is also reserved, check available ports and pick a free one:
+```bash
+netsh interface ipv4 show excludedportrange protocol=tcp
+```
+Update `docker-compose.yml` and `grafana/provisioning/datasources/datasources.yaml` accordingly.
 
 ### Reset all observability data
 ```bash
@@ -273,4 +276,4 @@ Then restart only the Grafana container:
 docker compose restart grafana
 ```
 
-The API will also pick up the new value on restart, since `GrafanaOptions` is validated at startup.
+The API will also pick up the new value on next restart, since `GrafanaOptions` is validated at startup.
