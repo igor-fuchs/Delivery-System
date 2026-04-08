@@ -14,14 +14,17 @@ namespace DeliverySystem.Infrastructure.Services;
 public sealed class ProductService : IProductService
 {
     private readonly ApplicationDbContext _context;
+    private readonly ICleanerService _cleaner;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ProductService"/> class.
     /// </summary>
     /// <param name="context">The database context.</param>
-    public ProductService(ApplicationDbContext context)
+    /// <param name="sanitizer">The HTML input sanitizer.</param>
+    public ProductService(ApplicationDbContext context, ICleanerService sanitizer)
     {
         _context = context;
+        _cleaner = sanitizer;
     }
 
     /// <inheritdoc />
@@ -54,8 +57,8 @@ public sealed class ProductService : IProductService
         var product = new Product
         {
             Id = Guid.NewGuid(),
-            Name = request.Name,
-            Description = request.Description,
+            Name = _cleaner.Clean(request.Name),
+            Description = _cleaner.Clean(request.Description),
             Stock = request.Stock,
             Price = request.Price,
             CreatedAt = DateTime.UtcNow
@@ -75,8 +78,8 @@ public sealed class ProductService : IProductService
         if (product is null)
             throw new NotFoundException($"Product '{id}' was not found.", ErrorCodes.ProductNotFound);
 
-        product.Name = request.Name;
-        product.Description = request.Description;
+        product.Name = _cleaner.Clean(request.Name);
+        product.Description = _cleaner.Clean(request.Description);
         product.Stock = request.Stock;
         product.Price = request.Price;
 

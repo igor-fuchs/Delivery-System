@@ -1,6 +1,5 @@
 using DeliverySystem.Application.Interfaces;
 using DeliverySystem.Infrastructure.Data;
-using DeliverySystem.Infrastructure.Services;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -47,8 +46,7 @@ public sealed class DeliverySystemFactory : WebApplicationFactory<Program>, IAsy
         builder.UseSetting("Jwt:Issuer", "DeliverySystem.Tests");
         builder.UseSetting("Jwt:Audience", "DeliverySystem.Tests");
         builder.UseSetting("Jwt:ExpirationMinutes", "60");
-        builder.UseSetting("Cors:AuthAllowedOrigins:0", "http://localhost");
-        builder.UseSetting("Cors:AuthAllowedMethods:0", "POST");
+        builder.UseSetting("Cors:AllowedOrigins:0", "http://localhost");
 
         // Redis — UseSetting so options validation passes during startup.
         // The actual connection is replaced in ConfigureServices below.
@@ -66,6 +64,13 @@ public sealed class DeliverySystemFactory : WebApplicationFactory<Program>, IAsy
         builder.UseSetting("RateLimit:ProductsWindowMinutes", "1");
         builder.UseSetting("RateLimit:OrdersPermitLimit", "10000");
         builder.UseSetting("RateLimit:OrdersWindowMinutes", "1");
+
+        // OpenTelemetry — options validation requires this during startup.
+        builder.UseSetting("OpenTelemetry:OtlpEndpoint", "http://localhost:4317");
+
+        // Grafana — options validation requires these during startup.
+        builder.UseSetting("Grafana:AdminUser", "test-admin");
+        builder.UseSetting("Grafana:AdminPassword", "Test@Password123");
 
         builder.ConfigureAppConfiguration((_, config) =>
         {

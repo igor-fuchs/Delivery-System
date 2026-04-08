@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace DeliverySystem.Infrastructure.Services;
+namespace DeliverySystem.Infrastructure.Data;
 
 /// <summary>
 /// Seeds the database with the required roles and the initial admin user.
@@ -70,7 +70,7 @@ public sealed class DatabaseSeeder
             if (!await _userManager.IsInRoleAsync(existingUser, AppRoles.Admin))
             {
                 await _userManager.AddToRoleAsync(existingUser, AppRoles.Admin);
-                _logger.LogInformation("Assigned '{Role}' role to existing admin user {Email}", AppRoles.Admin, _adminOptions.Email);
+                _logger.LogInformation("Assigned '{Role}' role to existing admin user", AppRoles.Admin);
             }
 
             return;
@@ -94,6 +94,6 @@ public sealed class DatabaseSeeder
         }
 
         await _userManager.AddToRoleAsync(adminUser, AppRoles.Admin);
-        _logger.LogInformation("Admin seed user created with email {Email}", _adminOptions.Email);
+        _logger.LogInformation("Admin seed user created successfully");
     }
 }

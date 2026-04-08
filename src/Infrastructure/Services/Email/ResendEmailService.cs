@@ -51,14 +51,11 @@ public sealed class ResendEmailService : IEmailService
     try
     {
       await _resend.EmailSendAsync(message, cancellationToken);
-      _logger.LogInformation("Password reset email sent to {Email}", toEmail);
+      _logger.LogInformation("Password reset email dispatched successfully");
     }
     catch (Exception ex)
     {
-      _logger.LogError(
-          ex,
-          "Resend failed to deliver password reset email to {Email}",
-          toEmail);
+      _logger.LogError(ex, "Resend failed to deliver password reset email");
 
       throw new ServiceUnavailableException(
           "Email delivery failed. Please try again later.",

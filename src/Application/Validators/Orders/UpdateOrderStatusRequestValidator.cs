@@ -13,9 +13,9 @@ public sealed class UpdateOrderStatusRequestValidator : AbstractValidator<Update
     public UpdateOrderStatusRequestValidator()
     {
         RuleFor(x => x.Status)
-            .NotEmpty().WithMessage("Status is required.").WithErrorCode(ErrorCodes.OrderStatusRequired)
+            .NotEmpty().WithMessage("Status is required.").WithErrorCode(ErrorCodes.ValidationFailed)
             .Must(s => Enum.TryParse<OrderStatus>(s, ignoreCase: true, out _))
             .WithMessage($"Status must be one of: {string.Join(", ", Enum.GetNames<OrderStatus>())}.")
-            .WithErrorCode(ErrorCodes.OrderStatusInvalid);
+            .WithErrorCode(ErrorCodes.ValidationFailed);
     }
 }

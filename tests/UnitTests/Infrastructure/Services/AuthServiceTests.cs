@@ -168,7 +168,7 @@ public sealed class AuthServiceTests
 
         var ex = await Assert.ThrowsAsync<NotFoundException>(() => _sut.LoginAsync(request));
 
-        Assert.Contains("unknown@example.com", ex.Message);
+        Assert.Contains("No account found", ex.Message);
     }
 
     [Fact]

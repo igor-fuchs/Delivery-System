@@ -101,8 +101,8 @@ public sealed class AuthService : IAuthService
         var user = await _userManager.FindByEmailAsync(email);
         if (user is null)
         {
-            _logger.LogWarning("Failed login attempt for unknown email {Email}", email);
-            throw new NotFoundException($"No account found for '{email}'.", ErrorCodes.UserNotFound);
+            _logger.LogWarning("Failed login attempt for unrecognized account");
+            throw new NotFoundException("No account found.", ErrorCodes.UserNotFound);
         }
 
         var valid = await _userManager.CheckPasswordAsync(user, request.Password);

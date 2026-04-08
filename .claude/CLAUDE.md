@@ -89,3 +89,16 @@ Presentation    — ASP.NET controllers, middleware, filters, Program.cs
 ## Documentation Requirements
 
 All public classes and methods must include XML documentation comments (`<summary>`, `<param>`, `<returns>`, `<exception>`). All API endpoints must have OpenAPI/Swagger annotations with response types. Add inline comments only to explain *why*, not *what*.
+
+When asked to commit changes:
+1. Run `git diff --staged` and `git diff` to see all changes
+2. Group changes by logical responsibility:
+   - feat: new functionality
+   - fix: bug fix
+   - refactor: refactoring without behavior change
+   - chore: configs, deps, build
+   - docs: documentation
+3. Use `git add -p` or `git add <file>` for selective staging
+4. Make one commit per group using conventional commits
+5. Never mix, for example feat + fix in the same commit
+6. Never add Co-Authored-By lines to commit messages

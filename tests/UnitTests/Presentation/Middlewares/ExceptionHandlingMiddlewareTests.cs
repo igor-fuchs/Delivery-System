@@ -35,7 +35,7 @@ public sealed class ExceptionHandlingMiddlewareTests
     {
         var errors = new Dictionary<string, ValidationFieldError[]>
         {
-            ["Email"] = [new ValidationFieldError(ErrorCodes.EmailRequired, "Email is required.")]
+            ["Email"] = [new ValidationFieldError(ErrorCodes.ValidationFailed, "Email is required.")]
         };
 
         var context = await InvokeMiddlewareAsync(new ValidationException(errors));
