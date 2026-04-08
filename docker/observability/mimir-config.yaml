@@ -6,15 +6,19 @@ multitenancy_enabled: false
 server:
   http_listen_port: 9009
 
-common:
-  storage:
-    backend: filesystem
-    filesystem:
-      dir: /data/mimir
-
+# Each storage component must have its own distinct path — Mimir rejects any
+# configuration where two components share or nest their filesystem directories.
 blocks_storage:
+  backend: filesystem
+  filesystem:
+    dir: /data/mimir/blocks
   tsdb:
     dir: /data/mimir/tsdb
+
+ruler_storage:
+  backend: filesystem
+  filesystem:
+    dir: /data/mimir/rules
 
 compactor:
   data_dir: /data/mimir/compactor
@@ -22,17 +26,16 @@ compactor:
 distributor:
   ring:
     kvstore:
-      store: memberlist
+      store: inmemory
 
 ingester:
   ring:
     kvstore:
-      store: memberlist
+      store: inmemory
     replication_factor: 1
 
 store_gateway:
   sharding_ring:
+    kvstore:
+      store: inmemory
     replication_factor: 1
-
-memberlist:
-  join_members: []

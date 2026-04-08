@@ -33,7 +33,7 @@ services:
 
   sqlserver:
     image: mcr.microsoft.com/mssql/server:2022-latest
-    container_name: delivery-system-sqlserver
+    container_name: sqlserver
     ports:
       - "1433:1433"
     environment:
@@ -52,7 +52,7 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: delivery-system-redis
+    container_name: redis
     ports:
       - "6379:6379"
     healthcheck:
@@ -64,7 +64,7 @@ services:
 
   otel-collector:
     image: otel/opentelemetry-collector-contrib:0.122.0
-    container_name: delivery-otel-collector
+    container_name: otel-collector
     command: ["--config=/etc/otelcol/otel-collector-config.yaml"]
     volumes:
       - ./docker/observability/otel-collector-config.yaml:/etc/otelcol/otel-collector-config.yaml:ro
@@ -79,7 +79,7 @@ services:
 
   loki:
     image: grafana/loki:3.4.2
-    container_name: delivery-loki
+    container_name: loki
     command: ["-config.file=/etc/loki/loki-config.yaml"]
     volumes:
       - ./docker/observability/loki-config.yaml:/etc/loki/loki-config.yaml:ro
@@ -90,7 +90,7 @@ services:
 
   tempo:
     image: grafana/tempo:2.7.2
-    container_name: delivery-tempo
+    container_name: tempo
     command: ["-config.file=/etc/tempo/tempo-config.yaml"]
     volumes:
       - ./docker/observability/tempo-config.yaml:/etc/tempo/tempo-config.yaml:ro
@@ -102,7 +102,7 @@ services:
 
   prometheus:
     image: prom/prometheus:v3.2.1
-    container_name: delivery-prometheus
+    container_name: prometheus
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
       - "--web.enable-remote-write-receiver"
@@ -116,13 +116,13 @@ services:
 
   mimir:
     image: grafana/mimir:2.15.0
-    container_name: delivery-mimir
+    container_name: mimir
     command: ["-config.file=/etc/mimir/mimir-config.yaml"]
     volumes:
       - ./docker/observability/mimir-config.yaml:/etc/mimir/mimir-config.yaml:ro
       - mimir-data:/data/mimir
     ports:
-      - "9009:9009"
+      - "19009:9009"
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "-O", "-", "http://localhost:9009/ready"]
       interval: 10s
@@ -133,7 +133,7 @@ services:
 
   grafana:
     image: grafana/grafana:11.5.2
-    container_name: delivery-grafana
+    container_name: grafana
     environment:
       GF_SECURITY_ADMIN_USER: ${GRAFANA__ADMIN_USER}
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA__ADMIN_PASSWORD}
