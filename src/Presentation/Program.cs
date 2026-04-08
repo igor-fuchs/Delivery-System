@@ -27,6 +27,14 @@ builder.Services
 
 builder.Services.AddInfrastructure(builder.Configuration, builder.Environment);
 
+builder.Services.AddOpenTelemetryObservability(builder.Configuration);
+
+builder.Services
+    .AddOptions<GrafanaOptions>()
+    .BindConfiguration(GrafanaOptions.SectionName)
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+
 builder.Services.AddValidatorsFromAssemblyContaining<DeliverySystem.Application.Validators.RegisterRequestValidator>();
 
 builder.Services
@@ -134,6 +142,7 @@ if (app.Environment.IsDevelopment())
     });
 }
 
+app.UseMiddleware<RequestTracingMiddleware>();
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseRateLimiter();
 app.UseCors(CorsOptions.DefaultPolicyName);
